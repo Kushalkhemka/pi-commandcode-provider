@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Stop silently dropping `role: "developer"` messages (for example OMP advisor steering notes, reminders, and nudges). `/alpha/generate` only accepts `user`, `assistant`, and `tool` roles, so developer messages are now forwarded as `user` messages with identical content in the same chronological position instead of disappearing from the request.
+
 ## 0.5.1 - 2026-08-11
 
 - Add model-specific image input capabilities from the `command-code@1.15.1` catalog and forward user and tool-result images using the current Command Code wire format.

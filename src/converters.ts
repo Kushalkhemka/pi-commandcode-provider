@@ -190,7 +190,12 @@ export function messagesToCC(
   const pairedToolCallIds = completeToolCallIds(messages)
 
   for (const message of messages ?? []) {
-    if (message.role === "user") {
+    if (message.role === "user" || message.role === "developer") {
+      // Hosts such as OMP steer the agent by injecting developer-role messages
+      // (advisor notes, reminders, nudges) mid-conversation. /alpha/generate
+      // only accepts user, assistant, and tool roles, so degrade the role to
+      // user instead of dropping the message. Content and chronological
+      // position are preserved; system-prompt hoisting would change semantics.
       out.push({
         role: "user",
         content: userContentToCommandCode(message.content, allowImages),

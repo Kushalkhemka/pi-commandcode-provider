@@ -495,6 +495,56 @@ describe("streamCommandCode — request serialization", () => {
     assert.equal(headers["x-session-id"], undefined)
   })
 
+  it("sends developer advisories as user messages in position, without system hoisting", async () => {
+    server.mockResponse({
+      type: "success",
+      events: [JSON.stringify({ type: "finish", finishReason: "stop" })],
+    })
+    const { streamCommandCode } = createTestDeps({ apiBase: server.baseUrl() })
+    const advisory =
+      '<advisory severity="blocker" guidance="weigh, don\'t blindly obey">\nStop and correct the benchmark.\n</advisory>'
+    const context = makeContext({
+      messages: [
+        { role: "user", content: "run the benchmark" },
+        {
+          role: "assistant",
+          content: [
+            { type: "text", text: "running it" },
+            { type: "toolCall", id: "c1", name: "bash", arguments: { command: "bench" } },
+          ],
+        },
+        {
+          role: "toolResult",
+          toolCallId: "c1",
+          toolName: "bash",
+          content: [{ type: "text", text: "benchmark output" }],
+        },
+        { role: "developer", content: advisory },
+        { role: "user", content: "continue" },
+      ],
+    })
+
+    await collectEvents(streamCommandCode(makeModel(), context, { apiKey: "mock-key" }))
+
+    const body = server.lastRequestBody()
+    assert.deepEqual(
+      objectAt(body, ["params", "messages", "3"]),
+      { role: "user", content: advisory },
+      "developer advisory should arrive as an in-position user message with identical content",
+    )
+    assert.deepEqual(objectAt(body, ["params", "messages", "4"]), {
+      role: "user",
+      content: "continue",
+    })
+    assert.equal(objectAt(body, ["params", "messages", "5"]), undefined)
+    assert.equal(
+      objectAt(body, ["params", "system"]),
+      "You are a test assistant.",
+      "advisory must not be hoisted into the system prompt",
+    )
+    assert.doesNotMatch(String(objectAt(body, ["params", "system"])), /advisory/)
+  })
+
   it("accepts the legacy OMP nested reasoning map", async () => {
     server.mockResponse({
       type: "success",

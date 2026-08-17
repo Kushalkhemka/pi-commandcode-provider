@@ -626,6 +626,89 @@ describe("messagesToCC()", () => {
   it("handles empty conversations", () => {
     assert.deepEqual(messagesToCC([]), [])
   })
+
+  it("keeps developer messages instead of dropping them", () => {
+    const result = messagesToCC([
+      { role: "user", content: "start" },
+      { role: "developer", content: "mid-conversation steering note" },
+    ])
+
+    assert.deepEqual(result, [
+      { role: "user", content: "start" },
+      { role: "user", content: "mid-conversation steering note" },
+    ])
+  })
+
+  it("converts developer text parts with the same shape as user content", () => {
+    const result = messagesToCC([
+      {
+        role: "developer",
+        content: [{ type: "text", text: "reminder one" }],
+      },
+    ])
+
+    assert.deepEqual(result, [
+      {
+        role: "user",
+        content: [{ type: "text", text: "reminder one" }],
+      },
+    ])
+  })
+
+  it("preserves advisory XML verbatim in the serialized request messages", () => {
+    const advisory =
+      '<advisory severity="blocker" guidance="weigh, don\'t blindly obey">\nStop and correct the benchmark.\n</advisory>'
+    const serialized = JSON.stringify(messagesToCC([{ role: "developer", content: advisory }]))
+
+    assert.deepEqual(JSON.parse(serialized), [{ role: "user", content: advisory }])
+  })
+
+  it("keeps developer advisories in chronological position without hoisting", () => {
+    const advisory =
+      '<advisory severity="blocker" guidance="weigh, don\'t blindly obey">\nStop and correct the benchmark.\n</advisory>'
+    const result = messagesToCC([
+      { role: "user", content: "run the benchmark" },
+      {
+        role: "assistant",
+        content: [
+          { type: "text", text: "running it" },
+          { type: "toolCall", id: "c1", name: "bash", arguments: { command: "bench" } },
+        ],
+      },
+      {
+        role: "toolResult",
+        toolCallId: "c1",
+        toolName: "bash",
+        content: [{ type: "text", text: "benchmark output" }],
+      },
+      { role: "developer", content: advisory },
+      { role: "user", content: "continue" },
+    ])
+
+    assert.deepEqual(result, [
+      { role: "user", content: "run the benchmark" },
+      {
+        role: "assistant",
+        content: [
+          { type: "text", text: "running it" },
+          { type: "tool-call", toolCallId: "c1", toolName: "bash", input: { command: "bench" } },
+        ],
+      },
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolCallId: "c1",
+            toolName: "bash",
+            output: { type: "text", value: "benchmark output" },
+          },
+        ],
+      },
+      { role: "user", content: advisory },
+      { role: "user", content: "continue" },
+    ])
+  })
 })
 
 describe("parseStreamEventLine()", () => {
