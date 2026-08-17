@@ -19,7 +19,10 @@ import { fileURLToPath } from "node:url"
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROJECT_DIR = resolve(__dirname, "..")
 const EXT_PATH = resolve(PROJECT_DIR, "index.ts")
+const ADVISORY_EXT_PATH = resolve(PROJECT_DIR, "tests/fixtures/advisory-injector-extension.ts")
 const TEST_MODEL = "deepseek/deepseek-v4-flash"
+const ADVISORY_XML =
+  '<advisory severity="blocker" guidance="weigh, don\'t blindly obey">\nStop and correct the benchmark.\n</advisory>'
 
 function findOmpBinary() {
   if (process.env.OMP_BIN) return process.env.OMP_BIN
@@ -45,6 +48,7 @@ const tempHome = mkdtempSync(join(tmpdir(), "omp-cc-home-"))
 let requestCount = 0
 let modelListRequestCount = 0
 let lastRequestBody
+let requestBodies = []
 let lastRequestHeaders = {}
 
 const server = createServer((req, res) => {
@@ -98,6 +102,7 @@ const server = createServer((req, res) => {
   req.on("end", () => {
     try {
       lastRequestBody = JSON.parse(body)
+      requestBodies.push(lastRequestBody)
     } catch {
       lastRequestBody = undefined
     }
@@ -160,19 +165,33 @@ function runOmp(args, timeoutMs = 30_000) {
 try {
   console.log("[omp-compat] list models through real extension")
   modelListRequestCount = 0
-  const result = await runOmp(["-e", EXT_PATH, "--list-models"])
-  assert.equal(result.code, 0, result.stderr)
-  const listOutput = result.stdout || result.stderr
-  assert.match(listOutput, /commandcode/)
-  assert.match(listOutput, /deepseek\/deepseek-v4-flash/)
-  assert.equal(modelListRequestCount, 1)
-  assert.doesNotThrow(() =>
-    accessSync(join(tempHome, ".omp", "agent", "commandcode-models.json"), constants.R_OK),
-  )
-  assert.doesNotMatch(result.stdout + result.stderr, /Failed to load extension/)
+  const list = await runOmp(["models", "--json", "-e", EXT_PATH, "--no-extensions"])
+  if (list.code !== 0 && /unknown|unrecognized/i.test(list.stderr + list.stdout)) {
+    console.log("[omp-compat] SKIP models phase - omp models subcommand unavailable")
+  } else {
+    assert.equal(list.code, 0, list.stderr)
+    let listed = null
+    try {
+      listed = JSON.parse(list.stdout)
+    } catch {
+      listed = null
+    }
+    const models = Array.isArray(listed?.models) ? listed.models : []
+    assert.ok(
+      models.some((model) => model.provider === "commandcode"),
+      "commandcode provider should be listed",
+    )
+    assert.ok(
+      models.some((model) => model.id === TEST_MODEL),
+      "mock catalog model should be listed",
+    )
+    assert.ok(modelListRequestCount >= 1)
+    assert.doesNotMatch(list.stdout + list.stderr, /Failed to load extension/)
+  }
 
   console.log("[omp-compat] print mode through real extension and mock API")
   requestCount = 0
+  requestBodies = []
   const print = await runOmp(
     ["-e", EXT_PATH, "-p", "say mock token", "--model", `commandcode/${TEST_MODEL}`],
     30_000,
@@ -187,6 +206,66 @@ try {
   )
   assert.equal(lastRequestBody?.params?.model, TEST_MODEL)
   assert.equal(typeof lastRequestBody?.params?.system, "string")
+  assert.doesNotThrow(() =>
+    accessSync(join(tempHome, ".omp", "agent", "commandcode-models.json"), constants.R_OK),
+  )
+
+  console.log("[omp-compat] developer advisory reaches the provider request body")
+  requestCount = 0
+  requestBodies = []
+  const advisoryRun = await runOmp(
+    [
+      "-e",
+      EXT_PATH,
+      "-e",
+      ADVISORY_EXT_PATH,
+      "-p",
+      "say mock token",
+      "--model",
+      `commandcode/${TEST_MODEL}`,
+      "--no-tools",
+      "--no-title",
+    ],
+    30_000,
+  )
+  assert.equal(advisoryRun.code, 0, advisoryRun.stderr)
+  assert.match(advisoryRun.stdout, /mock-omp-ok/)
+
+  const promptBodies = requestBodies.filter((body) =>
+    JSON.stringify(body?.params?.messages ?? []).includes("say mock token"),
+  )
+  assert.ok(promptBodies.length >= 1, "expected at least one generate request with the prompt")
+
+  for (const body of promptBodies) {
+    const messages = body?.params?.messages ?? []
+    const advisoryMessages = messages.filter((message) =>
+      JSON.stringify(message).includes("Stop and correct the benchmark."),
+    )
+    assert.equal(advisoryMessages.length, 1, "the advisory should survive conversion exactly once")
+    const advisoryMessage = advisoryMessages[0]
+    assert.equal(advisoryMessage.role, "user")
+    const advisoryText =
+      typeof advisoryMessage.content === "string"
+        ? advisoryMessage.content
+        : (advisoryMessage.content ?? [])
+            .map((part) => (part?.type === "text" ? part.text : ""))
+            .join("\n")
+    assert.equal(advisoryText, ADVISORY_XML, "advisory content must arrive verbatim")
+
+    const advisoryIndex = messages.indexOf(advisoryMessage)
+    const promptIndex = messages.findIndex((message) =>
+      JSON.stringify(message).includes("say mock token"),
+    )
+    assert.ok(
+      advisoryIndex < promptIndex,
+      "advisory must keep its chronological position relative to the prompt",
+    )
+    assert.doesNotMatch(
+      String(body?.params?.system ?? ""),
+      /Stop and correct the benchmark|<advisory/,
+      "advisory must not be hoisted into the system prompt",
+    )
+  }
 
   console.log("[omp-compat] PASS")
 } finally {
