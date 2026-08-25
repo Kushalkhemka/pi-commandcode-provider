@@ -50,6 +50,9 @@ let modelListRequestCount = 0
 let lastRequestBody
 let requestBodies = []
 let lastRequestHeaders = {}
+// When true the mock Provider API answers 403 upgrade_required so the
+// transport router falls back to the legacy /alpha/generate transport.
+let providerUpgradeRequired = false
 
 const server = createServer((req, res) => {
   if (req.method === "GET" && req.url === "/provider/v1/models") {
@@ -81,6 +84,51 @@ const server = createServer((req, res) => {
     return
   }
 
+  if (req.method === "POST" && req.url === "/provider/v1/chat/completions") {
+    requestCount += 1
+    lastRequestHeaders = Object.fromEntries(
+      Object.entries(req.headers).map(([key, value]) => [
+        key,
+        Array.isArray(value) ? value.join(", ") : (value ?? ""),
+      ]),
+    )
+
+    let body = ""
+    req.on("data", (chunk) => {
+      body += chunk.toString("utf-8")
+    })
+    req.on("end", () => {
+      try {
+        lastRequestBody = JSON.parse(body)
+        requestBodies.push(lastRequestBody)
+      } catch {
+        lastRequestBody = undefined
+      }
+
+      if (providerUpgradeRequired) {
+        res.writeHead(403, { "Content-Type": "application/json; charset=utf-8" })
+        res.end(JSON.stringify({ error: { code: "upgrade_required" } }))
+        return
+      }
+
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+      })
+      res.write(
+        `data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", choices: [{ index: 0, delta: { role: "assistant", content: "mock-omp-ok" }, finish_reason: null }] })}\n\n`,
+      )
+      res.write(
+        `data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", choices: [{ index: 0, delta: {}, finish_reason: "stop" }] })}\n\n`,
+      )
+      res.write(
+        `data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", choices: [], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } })}\n\n`,
+      )
+      res.end("data: [DONE]\n\n")
+    })
+    return
+  }
+
   if (req.method !== "POST" || req.url !== "/alpha/generate") {
     res.writeHead(404)
     res.end("Not found")
@@ -95,13 +143,13 @@ const server = createServer((req, res) => {
     ]),
   )
 
-  let body = ""
+  let generateBody = ""
   req.on("data", (chunk) => {
-    body += chunk.toString("utf-8")
+    generateBody += chunk.toString("utf-8")
   })
   req.on("end", () => {
     try {
-      lastRequestBody = JSON.parse(body)
+      lastRequestBody = JSON.parse(generateBody)
       requestBodies.push(lastRequestBody)
     } catch {
       lastRequestBody = undefined
@@ -133,8 +181,8 @@ function runOmp(args, timeoutMs = 30_000) {
         HOME: tempHome,
         USERPROFILE: tempHome,
         PI_CODING_AGENT_DIR: join(tempHome, ".omp", "agent"),
-        COMMANDCODE_API_KEY: "mock-key",
-        COMMANDCODE_API_BASE: apiBase,
+        COMMAND_CODE_API_KEY: "mock-key",
+        COMMANDCODE_API_BASE: `${apiBase}/provider/v1`,
         COMMANDCODE_MODELS_URL: `${apiBase}/provider/v1/models`,
       },
       stdio: ["ignore", "pipe", "pipe"],
@@ -165,29 +213,25 @@ function runOmp(args, timeoutMs = 30_000) {
 try {
   console.log("[omp-compat] list models through real extension")
   modelListRequestCount = 0
-  const list = await runOmp(["models", "--json", "-e", EXT_PATH, "--no-extensions"])
-  if (list.code !== 0 && /unknown|unrecognized/i.test(list.stderr + list.stdout)) {
-    console.log("[omp-compat] SKIP models phase - omp models subcommand unavailable")
-  } else {
-    assert.equal(list.code, 0, list.stderr)
-    let listed = null
-    try {
-      listed = JSON.parse(list.stdout)
-    } catch {
-      listed = null
-    }
-    const models = Array.isArray(listed?.models) ? listed.models : []
-    assert.ok(
-      models.some((model) => model.provider === "commandcode"),
-      "commandcode provider should be listed",
-    )
-    assert.ok(
-      models.some((model) => model.id === TEST_MODEL),
-      "mock catalog model should be listed",
-    )
-    assert.ok(modelListRequestCount >= 1)
-    assert.doesNotMatch(list.stdout + list.stderr, /Failed to load extension/)
+  // Prefer the flag form `omp -e EXT --list-models`; Homebrew's `omp`
+  // distribution only exposes the `omp models` subcommand, so fall back to
+  // that form when the flag invocation is not recognized.
+  let result = await runOmp(["-e", EXT_PATH, "--list-models"])
+  if (result.code !== 0) {
+    result = await runOmp(["models", "-e", EXT_PATH])
   }
+  assert.equal(result.code, 0, result.stderr)
+  const listOutput = result.stdout || result.stderr
+  assert.match(listOutput, /commandcode/)
+  assert.match(listOutput, /deepseek\/deepseek-v4-flash/)
+  // The failed flag attempt may already load the extension and fetch the
+  // catalog once before the subcommand fallback runs, so only assert that
+  // the mock catalog was actually consulted.
+  assert.ok(modelListRequestCount >= 1)
+  assert.doesNotThrow(() =>
+    accessSync(join(tempHome, ".omp", "agent", "commandcode-models.json"), constants.R_OK),
+  )
+  assert.doesNotMatch(result.stdout + result.stderr, /Failed to load extension/)
 
   console.log("[omp-compat] print mode through real extension and mock API")
   requestCount = 0
@@ -204,15 +248,13 @@ try {
     "Bearer mock-key",
     "should send the resolved env-var value, not the literal var name",
   )
-  assert.equal(lastRequestBody?.params?.model, TEST_MODEL)
-  assert.equal(typeof lastRequestBody?.params?.system, "string")
-  assert.doesNotThrow(() =>
-    accessSync(join(tempHome, ".omp", "agent", "commandcode-models.json"), constants.R_OK),
-  )
+  assert.equal(lastRequestBody?.model, TEST_MODEL)
+  assert.ok(Array.isArray(lastRequestBody?.messages))
 
-  console.log("[omp-compat] developer advisory reaches the provider request body")
+  console.log("[omp-compat] developer advisory reaches the legacy generate request body")
   requestCount = 0
   requestBodies = []
+  providerUpgradeRequired = true
   const advisoryRun = await runOmp(
     [
       "-e",

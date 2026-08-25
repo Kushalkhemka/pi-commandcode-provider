@@ -26,7 +26,8 @@ appendFileSync(process.env.FAKE_PI_LOG, JSON.stringify({
   skipVersionCheck: process.env.PI_SKIP_VERSION_CHECK,
   home: process.env.HOME,
   userProfile: process.env.USERPROFILE,
-  inheritedApiKey: process.env.COMMANDCODE_API_KEY ?? null,
+  inheritedApiKey:
+    process.env.COMMAND_CODE_API_KEY ?? process.env.COMMANDCODE_API_KEY ?? null,
 }) + "\\n")
 NODE
 if [ "$1" = "install" ]; then exit 0; fi
@@ -42,7 +43,8 @@ exit ${exitStatus}
         ...process.env,
         PATH: `${fakeBin}${delimiter}${process.env.PATH ?? ""}`,
         FAKE_PI_LOG: logPath,
-        COMMANDCODE_API_KEY: "must-not-leak",
+        COMMAND_CODE_API_KEY: "must-not-leak-official",
+        COMMANDCODE_API_KEY: "must-not-leak-legacy",
       },
       encoding: "utf8",
     })

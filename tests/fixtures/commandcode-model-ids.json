@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-08-04T10:12:57.953Z",
+  "fetchedAt": "2026-08-25T13:32:11.631Z",
   "source": "https://api.commandcode.ai/provider/v1/models",
   "modelIds": [
     "claude-sonnet-5",
@@ -18,11 +18,13 @@
     "gpt-5.4-mini",
     "deepseek/deepseek-v4-pro",
     "deepseek/deepseek-v4-flash",
+    "deepseek/deepseek-v4-flash-vision-exp",
     "moonshotai/Kimi-K3",
     "moonshotai/Kimi-K2.7-Code",
     "moonshotai/Kimi-K2.7-Code-Highspeed",
     "moonshotai/Kimi-K2.6",
     "moonshotai/Kimi-K2.5",
+    "zai-org/GLM-5.3",
     "zai-org/GLM-5.2",
     "zai-org/GLM-5.2-Fast",
     "zai-org/GLM-5.1",
@@ -33,6 +35,7 @@
     "xiaomi/mimo-v2.5-pro",
     "xiaomi/mimo-v2.5",
     "Qwen/Qwen3.8-Max",
+    "Qwen/Qwen3.8-27B",
     "Qwen/Qwen3.7-Max",
     "Qwen/Qwen3.7-Plus",
     "Qwen/Qwen3.7-Flash",
@@ -41,6 +44,7 @@
     "stepfun/Step-3.7-Flash",
     "stepfun/Step-3.5-Flash",
     "tencent/hy3-paid",
+    "google/gemini-3.7-flash",
     "google/gemini-3.6-flash",
     "google/gemini-3.5-flash",
     "google/gemini-3.5-flash-lite",
@@ -49,9 +53,12 @@
     "nvidia/nemotron-3-ultra-550b-a55b",
     "thinkingmachines/inkling",
     "thinkingmachines/inkling-small",
+    "stealth/ox-alpha",
     "poolside/laguna-s-2.1-free",
-    "inclusionai/ling-3.0-flash-free",
     "meta/muse-spark-1.1",
-    "xai/grok-4.5"
+    "meta/muse-spark-1.2",
+    "meta/muse-spark-1.2-contributor",
+    "xai/grok-4.5",
+    "xai/grok-4.6"
   ]
 }

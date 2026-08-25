@@ -110,7 +110,10 @@ export interface StreamOptions {
   apiKey?: string
   signal?: AbortSignal
   headers?: Record<string, string>
+  fetch?: typeof fetch
   maxTokens?: number
+  temperature?: number
+  sessionId?: string
   /** Resolved pi thinking level; forwarded only through the model's map. */
   reasoning?: string
   onPayload?: (payload: unknown, model: ModelLike) => unknown | Promise<unknown>
@@ -169,6 +172,12 @@ export type AssistantMessageEvent =
   | {
       type: "toolcall_start"
       contentIndex: number
+      partial: AssistantMessageLike
+    }
+  | {
+      type: "toolcall_delta"
+      contentIndex: number
+      delta: string
       partial: AssistantMessageLike
     }
   | {

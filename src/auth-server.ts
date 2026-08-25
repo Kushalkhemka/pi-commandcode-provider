@@ -28,6 +28,7 @@ export interface AuthServer {
 export interface AuthServerOptions {
   startPort?: number
   portRange?: number
+  expectedState?: string
 }
 
 function listenOnAvailablePort(
@@ -178,6 +179,12 @@ export async function startAuthServer(options: AuthServerOptions = {}): Promise<
               error: "Missing required fields",
             }),
           )
+          return
+        }
+
+        if (options.expectedState !== undefined && state !== options.expectedState) {
+          res.writeHead(403)
+          res.end(JSON.stringify({ success: false, error: "Invalid state token" }))
           return
         }
 

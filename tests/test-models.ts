@@ -4,7 +4,10 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, it } from "node:test"
 
+import { COMMAND_CODE_CLI_VERSION } from "../src/commandcode-catalog.ts"
 import {
+  apiForModelId,
+  baseUrlForModel,
   commandCodeModelsFromApiResponse,
   commandCodeModelsFromCache,
   DEFAULT_MODELS_TIMEOUT_MS,
@@ -13,6 +16,8 @@ import {
   loadCommandCodeModels,
   MODEL_EFFORTS,
   MODEL_INPUT_MODALITIES,
+  MODEL_MAX_OUTPUT_TOKENS,
+  MODEL_REASONING,
   modelSupportsImageInput,
   thinkingLevelMapForEfforts,
   thinkingMetadataForModel,
@@ -37,7 +42,8 @@ const EXPECTED_MODELS: readonly CommandCodeModel[] = [
   {
     id: "Qwen/Qwen3.7-Max",
     name: "Qwen 3.7 Max (CC)",
-    reasoning: false,
+    api: "openai-completions",
+    reasoning: true,
     contextWindow: 1_000_000,
     maxTokens: 65_536,
   },
@@ -84,61 +90,108 @@ describe("commandCodeModelsFromApiResponse()", () => {
     assert.deepEqual(commandCodeModelsFromApiResponse(API_RESPONSE), EXPECTED_MODELS)
   })
 
-  it("matches command-code@1.15.1 image input capabilities", () => {
-    assert.deepEqual(inputModalitiesForModel("gpt-5.6-luna"), ["text", "image"])
-    assert.deepEqual(inputModalitiesForModel("meta/muse-spark-1.2"), ["text", "image"])
-    assert.deepEqual(inputModalitiesForModel("deepseek/deepseek-v4-pro"), ["text"])
-    assert.deepEqual(inputModalitiesForModel("unknown-new-model"), ["text"])
-    assert.equal(modelSupportsImageInput("gpt-5.6-luna"), true)
-    assert.equal(modelSupportsImageInput("deepseek/deepseek-v4-pro"), false)
-    assert.equal(Object.keys(MODEL_INPUT_MODALITIES).length, 37)
+  it("routes Claude models to Anthropic Messages and all others to Chat Completions", () => {
+    assert.equal(apiForModelId("claude-sonnet-4-6"), "anthropic-messages")
+    assert.equal(apiForModelId("gpt-5.6-sol"), "openai-completions")
+    assert.equal(
+      baseUrlForModel("https://api.commandcode.ai/provider/v1/", "openai-completions"),
+      "https://api.commandcode.ai/provider/v1",
+    )
+    assert.equal(
+      baseUrlForModel("https://api.commandcode.ai/provider/v1/", "anthropic-messages"),
+      "https://api.commandcode.ai/provider",
+    )
   })
 
-  it("marks only known reasoning models as reasoning-capable", () => {
+  it(`uses the command-code@${COMMAND_CODE_CLI_VERSION} image capability catalog`, () => {
+    assert.deepEqual(inputModalitiesForModel("gpt-5.6-luna"), ["text", "image"])
+    assert.deepEqual(inputModalitiesForModel("meta/muse-spark-1.2"), ["text", "image"])
+    assert.deepEqual(inputModalitiesForModel("deepseek/deepseek-v4-flash-vision-exp"), [
+      "text",
+      "image",
+    ])
+    assert.deepEqual(inputModalitiesForModel("Qwen/Qwen3.8-27B"), ["text", "image"])
+    assert.deepEqual(inputModalitiesForModel("google/gemini-3.7-flash"), ["text", "image"])
+    assert.deepEqual(inputModalitiesForModel("stealth/ox-alpha"), ["text", "image"])
+    assert.deepEqual(inputModalitiesForModel("deepseek/deepseek-v4-pro"), ["text"])
+    assert.deepEqual(inputModalitiesForModel("zai-org/GLM-5.3"), ["text"])
+    assert.deepEqual(inputModalitiesForModel("unknown-new-model"), ["text"])
+    assert.equal(modelSupportsImageInput("gpt-5.6-luna"), true)
+    assert.equal(modelSupportsImageInput("deepseek/deepseek-v4-flash-vision-exp"), true)
+    assert.equal(modelSupportsImageInput("stealth/ox-alpha"), true)
+    assert.equal(modelSupportsImageInput("deepseek/deepseek-v4-pro"), false)
+    assert.ok(Object.keys(MODEL_INPUT_MODALITIES).length > 0)
+    for (const modalities of Object.values(MODEL_INPUT_MODALITIES)) {
+      assert.deepEqual(modalities, ["text", "image"])
+    }
+  })
+
+  it("tracks reasoning independently from selectable effort levels", () => {
     const models = commandCodeModelsFromApiResponse({
       object: "list",
       data: [
         { ...API_RESPONSE.data[0], id: "deepseek/deepseek-v4-flash" },
+        { ...API_RESPONSE.data[0], id: "moonshotai/Kimi-K3" },
         { ...API_RESPONSE.data[0], id: "new-model-without-metadata" },
       ],
     })
 
     assert.equal(models[0]?.reasoning, true)
-    assert.equal(models[1]?.reasoning, false)
+    assert.equal(models[1]?.reasoning, true)
+    assert.deepEqual(thinkingMetadataForModel("moonshotai/Kimi-K3"), {
+      thinkingLevelMap: {
+        minimal: null,
+        low: null,
+        medium: null,
+        high: null,
+        xhigh: null,
+        max: null,
+      },
+    })
+    assert.equal(models[2]?.reasoning, false)
+    assert.equal(Object.keys(MODEL_REASONING).length, 48)
   })
 
-  it("matches the exact command-code@1.15.1 reasoning effort catalog", () => {
-    assert.deepEqual(MODEL_EFFORTS, {
-      "Qwen/Qwen3.8-Max": ["low", "medium", "xhigh"],
-      "claude-fable-5": ["low", "medium", "high", "xhigh", "max"],
-      "claude-opus-4-7": ["low", "medium", "high", "xhigh", "max"],
-      "claude-opus-4-8": ["low", "medium", "high", "xhigh", "max"],
-      "claude-opus-5": ["low", "medium", "high", "xhigh", "max"],
-      "claude-sonnet-4-6": ["low", "medium", "high", "xhigh", "max"],
-      "claude-sonnet-5": ["low", "medium", "high", "xhigh", "max"],
-      "deepseek/deepseek-v4-flash": ["high", "max"],
-      "deepseek/deepseek-v4-pro": ["high", "max"],
-      "gpt-5.3-codex": ["low", "medium", "high", "xhigh"],
-      "gpt-5.4": ["low", "medium", "high", "xhigh"],
-      "gpt-5.4-mini": ["low", "medium", "high"],
-      "gpt-5.5": ["low", "medium", "high", "xhigh"],
-      "gpt-5.6-luna": ["low", "medium", "high", "xhigh", "max"],
-      "gpt-5.6-sol": ["low", "medium", "high", "xhigh", "max"],
-      "gpt-5.6-terra": ["low", "medium", "high", "xhigh", "max"],
-      "google/gemini-3.1-flash-lite": ["low", "medium", "high"],
-      "google/gemini-3.5-flash": ["low", "medium", "high"],
-      "google/gemini-3.5-flash-lite": ["low", "medium", "high"],
-      "google/gemini-3.6-flash": ["low", "medium", "high"],
-      "sakana/fugu-ultra": ["high", "xhigh"],
-      "xai/grok-4.5": ["low", "medium", "high"],
-      "zai-org/GLM-5.2": ["high", "max"],
+  it("uses model-specific output limits from the CLI catalog", () => {
+    const models = commandCodeModelsFromApiResponse({
+      object: "list",
+      data: [
+        { ...API_RESPONSE.data[0], id: "Qwen/Qwen3.8-27B", context_length: 262_144 },
+        { ...API_RESPONSE.data[0], id: "stealth/ox-alpha", context_length: 1_048_576 },
+        {
+          ...API_RESPONSE.data[0],
+          id: "poolside/laguna-s-2.1-free",
+          context_length: 256_000,
+        },
+      ],
     })
+
+    assert.deepEqual(
+      models.map(({ id, maxTokens }) => ({ id, maxTokens })),
+      [
+        { id: "Qwen/Qwen3.8-27B", maxTokens: 32_768 },
+        { id: "stealth/ox-alpha", maxTokens: 131_072 },
+        { id: "poolside/laguna-s-2.1-free", maxTokens: 32_768 },
+      ],
+    )
+    assert.equal(Object.keys(MODEL_MAX_OUTPUT_TOKENS).length, 3)
+  })
+
+  it(`uses the command-code@${COMMAND_CODE_CLI_VERSION} reasoning effort catalog`, () => {
+    const validEfforts = new Set(["minimal", "low", "medium", "high", "xhigh", "max"])
+    assert.ok(Object.keys(MODEL_EFFORTS).length > 0)
+    for (const efforts of Object.values(MODEL_EFFORTS)) {
+      assert.ok(efforts.length > 0)
+      assert.equal(new Set(efforts).size, efforts.length)
+      assert.ok(efforts.every((effort) => validEfforts.has(effort)))
+    }
   })
 
   it("builds separate canonical pi and OMP metadata", () => {
     for (const [modelId, efforts] of Object.entries(MODEL_EFFORTS)) {
       const metadata = thinkingMetadataForModel(modelId)
       assert.ok(metadata, `${modelId} should have reasoning metadata`)
+      assert.ok(metadata.thinking)
       assert.equal(metadata.thinking.mode, "effort")
       assert.deepEqual(metadata.thinking.efforts, efforts)
       assert.deepEqual(

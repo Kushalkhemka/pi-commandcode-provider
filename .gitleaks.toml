@@ -41,5 +41,5 @@ title = "pi-commandcode-provider secret scan"
 [[rules]]
   id = "pi-test-api-key"
   description = "Test API key value that looks real"
-  regex = '''(user_testKey|mock-key|fake-key|test-api-key)'''
+  regex = '''['"](user_testKey|mock-key|fake-key|test-api-key)['"]'''
   tags = ["pi-extension", "test"]

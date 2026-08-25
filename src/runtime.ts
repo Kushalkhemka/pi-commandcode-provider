@@ -28,11 +28,13 @@ export interface CommandCodeRuntimeOptions<TProviderConfig> {
   cachePath: string
   loadModels: () => Promise<LoadCommandCodeModelsResult>
   createProviderConfig: (models: readonly CommandCodeModel[]) => TProviderConfig
+  getTransport?: () => "unknown" | "provider" | "generate"
   now?: () => number
   logWarning?: (message: string) => void
 }
 
 export interface CommandCodeRuntimeStatus {
+  transport: "unknown" | "provider" | "generate"
   source: LoadCommandCodeModelsResult["source"]
   modelCount: number
   lastSuccess?: number
@@ -86,6 +88,7 @@ function formatTimestamp(timestamp: number | undefined): string {
 
 export function formatCommandCodeStatus(status: CommandCodeRuntimeStatus): string {
   const lines = [
+    `transport: ${status.transport}`,
     `source: ${status.source}`,
     `model count: ${status.modelCount}`,
     `last success: ${formatTimestamp(status.lastSuccess)}`,
@@ -113,6 +116,7 @@ export class CommandCodeRuntime<TProviderConfig, TContext extends CommandCodeCom
     this.now = options.now ?? Date.now
     this.logWarning = options.logWarning ?? ((message) => console.warn(`[commandcode] ${message}`))
     const initialStatus: CommandCodeRuntimeStatus = {
+      transport: "unknown",
       source: "empty",
       modelCount: 0,
       cachePath: options.cachePath,
@@ -123,7 +127,10 @@ export class CommandCodeRuntime<TProviderConfig, TContext extends CommandCodeCom
   }
 
   getStatus(): CommandCodeRuntimeStatus {
-    return { ...this.status }
+    return {
+      ...this.status,
+      transport: this.options.getTransport?.() ?? "unknown",
+    }
   }
 
   async initialize(): Promise<void> {
@@ -259,10 +266,8 @@ export class CommandCodeRuntime<TProviderConfig, TContext extends CommandCodeCom
     this.pi.registerCommand("commandcode-status", {
       description: "Show redacted Command Code provider diagnostics",
       handler: async (_args, ctx) => {
-        ctx.ui.notify(
-          formatCommandCodeStatus(this.status),
-          this.status.warning ? "warning" : "info",
-        )
+        const status = this.getStatus()
+        ctx.ui.notify(formatCommandCodeStatus(status), status.warning ? "warning" : "info")
       },
     })
   }

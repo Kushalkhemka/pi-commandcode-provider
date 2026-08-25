@@ -49,6 +49,7 @@ class CommandContext implements CommandCodeCommandContext {
 const FIRST_MODEL: CommandCodeModel = {
   id: "first-model",
   name: "First Model",
+  api: "openai-completions",
   reasoning: true,
   contextWindow: 128_000,
   maxTokens: 16_384,
@@ -57,6 +58,7 @@ const FIRST_MODEL: CommandCodeModel = {
 const SECOND_MODEL: CommandCodeModel = {
   id: "second-model",
   name: "Second Model",
+  api: "openai-completions",
   reasoning: true,
   contextWindow: 256_000,
   maxTokens: 32_768,
@@ -96,6 +98,7 @@ describe("Command Code runtime", () => {
       cachePath: "/tmp/commandcode-models.json",
       loadModels: () => firstLoad.promise,
       createProviderConfig: (models) => ({ models }),
+      getTransport: () => "provider",
       now: () => now,
       logWarning: () => {},
     })
@@ -113,6 +116,7 @@ describe("Command Code runtime", () => {
     assert.ok(statusCommand)
     await statusCommand("", context)
     const statusMessage = context.notifications.at(-1)?.message ?? ""
+    assert.match(statusMessage, /transport: provider/)
     assert.match(statusMessage, /source: live/)
     assert.match(statusMessage, /model count: 1/)
     assert.match(statusMessage, /last success:/)

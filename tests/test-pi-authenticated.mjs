@@ -22,7 +22,7 @@ const { writeFileSync } = require("node:fs")
 writeFileSync(process.env.FAKE_PI_LOG, JSON.stringify({
   args: process.argv.slice(2),
   agentDir: process.env.PI_CODING_AGENT_DIR ?? null,
-  apiKey: process.env.COMMANDCODE_API_KEY ?? null,
+  apiKey: process.env.COMMAND_CODE_API_KEY ?? process.env.COMMANDCODE_API_KEY ?? null,
   skipVersionCheck: process.env.PI_SKIP_VERSION_CHECK,
 }))
 NODE
@@ -38,7 +38,8 @@ NODE
         PATH: `${fakeBin}${delimiter}${process.env.PATH ?? ""}`,
         FAKE_PI_LOG: logPath,
         PI_CODING_AGENT_DIR: "/existing/pi-agent",
-        COMMANDCODE_API_KEY: "existing-key",
+        COMMAND_CODE_API_KEY: "official-existing-key",
+        COMMANDCODE_API_KEY: "legacy-existing-key",
       },
       encoding: "utf8",
     })

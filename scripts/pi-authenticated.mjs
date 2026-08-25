@@ -11,6 +11,7 @@ const env = {
   ...process.env,
   PI_SKIP_VERSION_CHECK: "1",
 }
+delete env.COMMAND_CODE_API_KEY
 delete env.COMMANDCODE_API_KEY
 
 const child = spawn(

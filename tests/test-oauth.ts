@@ -9,7 +9,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import { startAuthServer, type AuthCallback } from "../src/auth-server.ts"
-import { getApiKey, login, refreshToken, sanitizeApiKey } from "../src/oauth.ts"
+import { getApiKey, login, refreshToken, sanitizeApiKey, validateApiKey } from "../src/oauth.ts"
 
 /**
  * Helper: wait for an HTTP server to close, or resolve immediately if already closed.
@@ -24,9 +24,27 @@ function waitForClose(server: {
   })
 }
 
+async function withValidApiKeyFetch<T>(run: () => Promise<T>): Promise<T> {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = (input, init) => {
+    if (String(input).endsWith("/alpha/whoami")) {
+      return Promise.resolve(new Response(JSON.stringify({ user: {} }), { status: 200 }))
+    }
+    return originalFetch(input, init)
+  }
+  try {
+    return await run()
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+}
+
 describe("startAuthServer()", () => {
   it("starts on a localhost port and accepts a valid callback POST", async () => {
-    const { server, port, waitForCallback } = await startAuthServer({ startPort: 0 })
+    const { server, port, waitForCallback } = await startAuthServer({
+      startPort: 0,
+      expectedState: "test-state-token",
+    })
 
     const callbackData: AuthCallback = {
       apiKey: "user_testKey123",
@@ -54,6 +72,42 @@ describe("startAuthServer()", () => {
     assert.equal(result.userName, "Test User")
     assert.equal(result.keyName, "test-key")
 
+    await waitForClose(server)
+  })
+
+  it("rejects a mismatched state without closing the callback server", async () => {
+    const { server, port, waitForCallback } = await startAuthServer({
+      startPort: 0,
+      expectedState: "correct-state",
+    })
+
+    const invalidResponse = await fetch(`http://127.0.0.1:${port}/callback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: "https://commandcode.ai" },
+      body: JSON.stringify({
+        apiKey: "user_badState",
+        state: "wrong-state",
+        userId: "user_789",
+        userName: "Attacker",
+        keyName: "evil-key",
+      }),
+    })
+    assert.equal(invalidResponse.status, 403)
+    assert.equal(server.listening, true)
+
+    const validResponse = await fetch(`http://127.0.0.1:${port}/callback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: "https://commandcode.ai" },
+      body: JSON.stringify({
+        apiKey: "user_valid",
+        state: "correct-state",
+        userId: "user_123",
+        userName: "Valid User",
+        keyName: "valid-key",
+      }),
+    })
+    assert.equal(validResponse.status, 200)
+    assert.equal((await waitForCallback).apiKey, "user_valid")
     await waitForClose(server)
   })
 
@@ -176,6 +230,18 @@ describe("OAuth functions", () => {
   it("sanitizeApiKey removes paste markers, control chars, and whitespace", () => {
     assert.equal(sanitizeApiKey("\u001b[200~  user_manualKey\n\u001b[201~"), "user_manualKey")
   })
+
+  it("validates manual API keys through whoami", async () => {
+    await validateApiKey("valid-key", {
+      fetchImpl: () => Promise.resolve(new Response(JSON.stringify({ user: {} }), { status: 200 })),
+    })
+    await assert.rejects(
+      validateApiKey("invalid-key", {
+        fetchImpl: () => Promise.resolve(new Response("unauthorized", { status: 401 })),
+      }),
+      /Invalid Command Code API key/,
+    )
+  })
 })
 
 describe("login()", () => {
@@ -186,7 +252,7 @@ describe("login()", () => {
         authUrl = params.url
       },
       onPrompt(_params: { message: string }): Promise<string> {
-        throw new Error("onPrompt should not be called in browser flow")
+        return Promise.resolve("")
       },
     }
 
@@ -239,21 +305,23 @@ describe("login()", () => {
     process.env.COMMANDCODE_AUTH_TIMEOUT_MS = "1"
 
     let authUrl = ""
-    let promptMessage = ""
+    const promptMessages: string[] = []
 
     try {
-      const result = await login({
-        onAuth(params: { url: string }) {
-          authUrl = params.url
-        },
-        async onPrompt(params: { message: string }): Promise<string> {
-          promptMessage = params.message
-          return "\u001b[200~  user_manualApiKey\n\u001b[201~"
-        },
-      })
+      const result = await withValidApiKeyFetch(() =>
+        login({
+          onAuth(params: { url: string }) {
+            authUrl = params.url
+          },
+          async onPrompt(params: { message: string }): Promise<string> {
+            promptMessages.push(params.message)
+            return promptMessages.length === 1 ? "" : "\u001b[200~  user_manualApiKey\n\u001b[201~"
+          },
+        }),
+      )
 
       assert.match(authUrl, /^https:\/\/commandcode\.ai\/studio\/auth\/cli\?/)
-      assert.match(promptMessage, /Paste your Command Code API key/)
+      assert.match(promptMessages[1] ?? "", /Paste your Command Code API key/)
       assert.equal(result.access, "user_manualApiKey")
       assert.equal(result.refresh, "user_manualApiKey")
       assert.ok(result.expires > Date.now(), "expiry should be far in the future")
@@ -263,23 +331,53 @@ describe("login()", () => {
     }
   })
 
-  it("rejects on state token mismatch", async () => {
+  it("accepts a directly pasted API key", async () => {
+    let authOpened = false
+    const result = await withValidApiKeyFetch(() =>
+      login({
+        onAuth() {
+          authOpened = true
+        },
+        onPrompt(): Promise<string> {
+          return Promise.resolve("user_directApiKey")
+        },
+      }),
+    )
+
+    assert.equal(authOpened, false)
+    assert.equal(result.access, "user_directApiKey")
+  })
+
+  it("offers an explicit API key prompt", async () => {
+    let promptCount = 0
+    const result = await withValidApiKeyFetch(() =>
+      login({
+        onAuth() {
+          throw new Error("browser should not open")
+        },
+        onPrompt(): Promise<string> {
+          promptCount += 1
+          return Promise.resolve(promptCount === 1 ? "key" : "user_promptedApiKey")
+        },
+      }),
+    )
+
+    assert.equal(result.access, "user_promptedApiKey")
+    assert.equal(promptCount, 2)
+  })
+
+  it("keeps waiting after a state mismatch and accepts the legitimate callback", async () => {
     let authUrl = ""
     const callbacks = {
       onAuth(params: { url: string }) {
         authUrl = params.url
       },
       onPrompt(_params: { message: string }): Promise<string> {
-        throw new Error("should not prompt")
+        return Promise.resolve("")
       },
     }
 
-    const loginPromise: Promise<string> = login(callbacks).then(
-      () => {
-        throw new Error("Expected login to reject")
-      },
-      (e: Error) => e.message,
-    )
+    const loginPromise = login(callbacks)
 
     // Wait for onAuth to be called asynchronously
     while (!authUrl) await new Promise((resolve) => setTimeout(resolve, 10))
@@ -287,8 +385,8 @@ describe("login()", () => {
     const url = new URL(authUrl)
     const port = parseInt(url.searchParams.get("callback")?.match(/localhost:(\d+)/)?.[1] ?? "0")
 
-    // Post back with a wrong state token
-    await fetch(`http://127.0.0.1:${port}/callback`, {
+    // Post back with a wrong state token.
+    const invalidResponse = await fetch(`http://127.0.0.1:${port}/callback`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Origin: "https://commandcode.ai" },
       body: JSON.stringify({
@@ -300,7 +398,20 @@ describe("login()", () => {
       }),
     })
 
-    const errorMsg = await loginPromise
-    assert.match(errorMsg, /State token mismatch/)
+    assert.equal(invalidResponse.status, 403)
+
+    const validResponse = await fetch(`http://127.0.0.1:${port}/callback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: "https://commandcode.ai" },
+      body: JSON.stringify({
+        apiKey: "user_goodState",
+        state: url.searchParams.get("state"),
+        userId: "user_123",
+        userName: "Real User",
+        keyName: "real-key",
+      }),
+    })
+    assert.equal(validResponse.status, 200)
+    assert.equal((await loginPromise).access, "user_goodState")
   })
 })

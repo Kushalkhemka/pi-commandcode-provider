@@ -7,7 +7,7 @@
  * 3. Can complete a simple prompt (requires Command Code auth)
  *
  * Run with: node tests/test-smoke.mjs
- * Requires: pi on PATH plus COMMANDCODE_API_KEY or live pi auth files.
+ * Requires: pi on PATH plus COMMAND_CODE_API_KEY (or legacy COMMANDCODE_API_KEY) or live pi auth files.
  */
 
 import { spawn } from "node:child_process"
@@ -48,6 +48,7 @@ const RPC_QUERY_TIMEOUT = 60_000
 
 function hasCommandCodeAuth() {
   return (
+    !!process.env.COMMAND_CODE_API_KEY ||
     !!process.env.COMMANDCODE_API_KEY ||
     existsSync(join(homedir(), ".commandcode", "auth.json")) ||
     existsSync(join(homedir(), ".pi", "agent", "auth.json"))

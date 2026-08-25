@@ -22,6 +22,7 @@ const env = {
   PI_CODING_AGENT_SESSION_DIR: sessionDir,
   PI_SKIP_VERSION_CHECK: "1",
 }
+delete env.COMMAND_CODE_API_KEY
 delete env.COMMANDCODE_API_KEY
 
 let activeChild

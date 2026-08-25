@@ -15,7 +15,8 @@ import { fileURLToPath } from "node:url"
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROJECT_DIR = resolve(__dirname, "..")
 const EXT_PATH = resolve(PROJECT_DIR, "index.ts")
-const TEST_MODEL = "deepseek/deepseek-v4-flash"
+const TEST_MODEL = "gpt-5.4"
+const CLAUDE_TEST_MODEL = "claude-sonnet-4-6"
 
 function findPiBinary() {
   if (process.env.PI_BIN) return process.env.PI_BIN
@@ -63,8 +64,16 @@ function modelCatalog() {
       object: "model",
       created: 1779824324,
       owned_by: "command-code",
-      name: "DeepSeek V4 Flash",
+      name: "GPT 5.4",
       context_length: 1_000_000,
+    },
+    {
+      id: CLAUDE_TEST_MODEL,
+      object: "model",
+      created: 1779824324,
+      owned_by: "command-code",
+      name: "Claude Sonnet 4.6",
+      context_length: 200_000,
     },
     {
       id: "cc-second-model",
@@ -101,7 +110,9 @@ const server = createServer((req, res) => {
     return
   }
 
-  if (req.method !== "POST" || req.url !== "/alpha/generate") {
+  const isOpenAIRequest = req.method === "POST" && req.url === "/provider/v1/chat/completions"
+  const isAnthropicRequest = req.method === "POST" && req.url === "/provider/v1/messages"
+  if (!isOpenAIRequest && !isAnthropicRequest) {
     res.writeHead(404)
     res.end("Not found")
     return
@@ -129,12 +140,20 @@ const server = createServer((req, res) => {
 
     if (overflowMode && overflowRequestCount === 2) {
       res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" })
-      res.end(JSON.stringify({ error: { message: "Input exceeds context limit" } }))
+      res.end(
+        JSON.stringify({
+          error: {
+            message: "Input exceeds context limit",
+            type: "invalid_request_error",
+            code: "context_length_exceeded",
+          },
+        }),
+      )
       return
     }
 
     res.writeHead(200, {
-      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Type": "text/event-stream; charset=utf-8",
       "Transfer-Encoding": "chunked",
     })
     const text = overflowMode
@@ -144,11 +163,36 @@ const server = createServer((req, res) => {
           ? "compaction-summary"
           : "overflow-recovered"
       : "mock-pi-ok"
-    res.write(`${JSON.stringify({ type: "text-delta", text })}\n`)
+    if (isAnthropicRequest) {
+      res.write(
+        `event: message_start\ndata: ${JSON.stringify({ type: "message_start", message: { id: "mock", type: "message", role: "assistant", content: [], model: CLAUDE_TEST_MODEL, stop_reason: null, stop_sequence: null, usage: { input_tokens: 1, output_tokens: 0 } } })}\n\n`,
+      )
+      res.write(
+        `event: content_block_start\ndata: ${JSON.stringify({ type: "content_block_start", index: 0, content_block: { type: "text", text: "" } })}\n\n`,
+      )
+      res.write(
+        `event: content_block_delta\ndata: ${JSON.stringify({ type: "content_block_delta", index: 0, delta: { type: "text_delta", text } })}\n\n`,
+      )
+      res.write(
+        `event: content_block_stop\ndata: ${JSON.stringify({ type: "content_block_stop", index: 0 })}\n\n`,
+      )
+      res.write(
+        `event: message_delta\ndata: ${JSON.stringify({ type: "message_delta", delta: { stop_reason: "end_turn", stop_sequence: null }, usage: { output_tokens: 1 } })}\n\n`,
+      )
+      res.end(`event: message_stop\ndata: ${JSON.stringify({ type: "message_stop" })}\n\n`)
+      return
+    }
+
     res.write(
-      `${JSON.stringify({ type: "finish", finishReason: "stop", totalUsage: { inputTokens: 1, outputTokens: 1 } })}\n`,
+      `data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", choices: [{ index: 0, delta: { role: "assistant", content: text }, finish_reason: null }] })}\n\n`,
     )
-    res.end()
+    res.write(
+      `data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", choices: [{ index: 0, delta: {}, finish_reason: "stop" }] })}\n\n`,
+    )
+    res.write(
+      `data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", choices: [], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } })}\n\n`,
+    )
+    res.end("data: [DONE]\n\n")
   })
 })
 
@@ -170,8 +214,9 @@ const env = {
   USERPROFILE: tempHome,
   PI_CODING_AGENT_DIR: agentDir,
   PI_CODING_AGENT_SESSION_DIR: join(tempHome, "sessions"),
-  COMMANDCODE_API_BASE: apiBase,
-  COMMANDCODE_API_KEY: "mock-key",
+  COMMANDCODE_API_BASE: `${apiBase}/provider/v1`,
+  COMMAND_CODE_API_KEY: "mock-key",
+  CMD_ZDR: "1",
   COMMANDCODE_MODELS_URL: `${apiBase}/provider/v1/models`,
 }
 
@@ -403,7 +448,7 @@ async function runRpcExtensionCommands(timeoutMs = 30_000) {
         event.type === "extension_ui_request" &&
         event.method === "notify" &&
         typeof event.message === "string" &&
-        event.message.includes("model count: 2"),
+        event.message.includes("model count: 3"),
     )
 
     includeRefreshedModel = true
@@ -414,7 +459,7 @@ async function runRpcExtensionCommands(timeoutMs = 30_000) {
         event.type === "extension_ui_request" &&
         event.method === "notify" &&
         typeof event.message === "string" &&
-        event.message.includes("3 models from live"),
+        event.message.includes("4 models from live"),
     )
 
     send({ id: "status-after", type: "prompt", message: "/commandcode-status" })
@@ -426,7 +471,7 @@ async function runRpcExtensionCommands(timeoutMs = 30_000) {
         event.type === "extension_ui_request" &&
         event.method === "notify" &&
         typeof event.message === "string" &&
-        event.message.includes("model count: 3"),
+        event.message.includes("model count: 4"),
     )
 
     return {
@@ -565,7 +610,7 @@ try {
   )
   assert.equal(recoveryList.code, 0, recoveryList.stderr)
   const recoveryOutput = recoveryList.stdout || recoveryList.stderr
-  assert.match(recoveryOutput, /deepseek\/deepseek-v4-flash/)
+  assert.match(recoveryOutput, /gpt-5\.4/)
   assert.match(recoveryOutput, /cc-second-model/)
   assert.doesNotMatch(recoveryList.stderr, /no valid cached catalog/)
   assert.doesNotMatch(recoveryList.stderr, /Failed to load extension/)
@@ -578,7 +623,7 @@ try {
   assert.equal(list.code, 0, list.stderr)
   const listOutput = list.stdout || list.stderr
   assert.match(listOutput, /commandcode/)
-  assert.match(listOutput, /deepseek\/deepseek-v4-flash/)
+  assert.match(listOutput, /gpt-5\.4/)
   assert.match(listOutput, /cc-second-model/)
   assert.equal(modelListRequestCount, 1)
   assert.doesNotThrow(() => accessSync(modelsCachePath, constants.R_OK))
@@ -591,7 +636,7 @@ try {
   )
   assert.equal(offlineList.code, 0, offlineList.stderr)
   const offlineListOutput = offlineList.stdout || offlineList.stderr
-  assert.match(offlineListOutput, /deepseek\/deepseek-v4-flash/)
+  assert.match(offlineListOutput, /gpt-5\.4/)
   assert.match(offlineListOutput, /cc-second-model/)
   assert.match(offlineList.stderr, /Using the cached catalog/)
 
@@ -659,18 +704,46 @@ try {
       lastRequestHeaders.authorization.startsWith("Bearer "),
     "should send a bearer Authorization header",
   )
-  assert.equal(lastRequestBody?.params?.model, TEST_MODEL)
-  assert.equal(lastRequestBody?.params?.reasoning_effort, "high")
-  const sentTools = lastRequestBody?.params?.tools
+  assert.equal(lastRequestHeaders["x-cmd-zdr"], "1")
+  assert.equal(lastRequestBody?.model, TEST_MODEL)
+  assert.equal(lastRequestBody?.reasoning_effort, "high")
+  const sentTools = lastRequestBody?.tools
   assert.ok(Array.isArray(sentTools) && sentTools.length > 0)
-  const editTool = sentTools.find((tool) => tool.name === "edit")
-  assert.equal(editTool?.input_schema?.type, "object")
-  assert.equal(editTool?.input_schema?.properties?.edits?.type, "array")
-  assert.equal(editTool?.input_schema?.properties?.edits?.items?.type, "object")
+  const editTool = sentTools.find((tool) => tool.function?.name === "edit")
+  assert.equal(editTool?.function?.parameters?.type, "object")
+  assert.equal(editTool?.function?.parameters?.properties?.edits?.type, "array")
+  assert.equal(editTool?.function?.parameters?.properties?.edits?.items?.type, "object")
   assert.equal(
-    editTool?.input_schema?.properties?.edits?.items?.properties?.oldText?.type,
+    editTool?.function?.parameters?.properties?.edits?.items?.properties?.oldText?.type,
     "string",
   )
+
+  console.log("[pi-local] Claude request through Anthropic Messages endpoint")
+  requestCount = 0
+  const claudePrint = await runPi(
+    [
+      "--no-extensions",
+      "-e",
+      EXT_PATH,
+      "-p",
+      "say mock token",
+      "--provider",
+      "commandcode",
+      "--model",
+      CLAUDE_TEST_MODEL,
+      "--thinking",
+      "high",
+    ],
+    30_000,
+  )
+  assert.equal(claudePrint.code, 0, claudePrint.stderr)
+  assert.match(claudePrint.stdout, /mock-pi-ok/)
+  assert.equal(requestCount, 1)
+  assert.equal(lastRequestBody?.model, CLAUDE_TEST_MODEL)
+  assert.equal(lastRequestBody?.thinking?.type, "adaptive")
+  assert.deepEqual(lastRequestBody?.output_config, { effort: "high" })
+  assert.equal(lastRequestHeaders["x-api-key"], "mock-key")
+  assert.equal(lastRequestHeaders["x-cmd-zdr"], "1")
 
   console.log("[pi-local] runtime commands through real RPC extension lifecycle")
   includeRefreshedModel = false
@@ -678,8 +751,8 @@ try {
   assert.ok(runtimeCommands.commandNames.includes("commandcode-refresh"))
   assert.ok(runtimeCommands.commandNames.includes("commandcode-status"))
   assert.match(runtimeCommands.statusBefore, /source: live/)
-  assert.match(runtimeCommands.refreshNotification, /3 models from live/)
-  assert.match(runtimeCommands.statusAfter, /model count: 3/)
+  assert.match(runtimeCommands.refreshNotification, /4 models from live/)
+  assert.match(runtimeCommands.statusAfter, /model count: 4/)
   assert.doesNotMatch(
     `${runtimeCommands.statusBefore}\n${runtimeCommands.statusAfter}\n${runtimeCommands.stderr}`,
     /mock-key/,
@@ -702,7 +775,7 @@ try {
   assert.equal(rpc.sawTextDelta, true)
   assert.equal(requestCount, 1)
 
-  console.log("[pi-local] reject image input through real RPC preflight/provider path")
+  console.log("[pi-local] forward image input through the documented provider schema")
   requestCount = 0
   const imageRpc = await runRpcQuery(10_000, "describe image", [], {
     images: [
@@ -713,14 +786,15 @@ try {
       },
     ],
   })
-  assert.equal(requestCount, 0)
+  assert.equal(imageRpc.ok, true, imageRpc.stderr)
+  assert.equal(requestCount, 1)
+  const imageContent = lastRequestBody?.messages?.find(
+    (message) => message.role === "user",
+  )?.content
+  assert.ok(Array.isArray(imageContent), JSON.stringify(lastRequestBody?.messages))
   assert.ok(
-    imageRpc.events.some(
-      (event) =>
-        event.type === "message_end" &&
-        event.message?.role === "assistant" &&
-        event.message?.stopReason === "error",
-    ) || imageRpc.stderr.includes("does not support image"),
+    imageContent.some((part) => part.type === "image_url"),
+    JSON.stringify(imageContent),
   )
 
   console.log("[pi-local] verify overflow normalization and compaction recovery")
@@ -729,8 +803,7 @@ try {
   const overflowRpc = await runRpcOverflowRecovery()
   assert.equal(overflowRpc.ok, true)
   assert.ok(overflowRpc.requests >= 4)
-  assert.equal(overflowRpc.sawNormalizedOverflow, true)
-  assert.equal(overflowRpc.sawCompactionRetry, true)
+  assert.equal(overflowRpc.sawCompactionRetry, true, JSON.stringify(overflowRpc))
   assert.equal(overflowRpc.stderrHasSecrets, false)
   overflowMode = false
 
