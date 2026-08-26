@@ -276,7 +276,13 @@ describe("Command Code quota", () => {
     const { fetchImpl } = okFetch({
       whoami: { user: { userName: "alice", keyName: "Pi Agent" }, org: null },
       credits: { credits: { monthlyCredits: 5, purchasedCredits: 0, freeCredits: 0 } },
-      subscriptions: { data: { planId: "pro", status: "active" } },
+      subscriptions: {
+        data: {
+          planId: "pro",
+          status: "active",
+          currentPeriodEnd: Date.parse("2026-02-01T00:00:00Z"),
+        },
+      },
       summary: { totalCost: 1.06, totalCount: 654, totalTokens: 74_200_000 },
     })
     const result = await fetchCommandCodeQuota({ apiKey: "cc_test_key", fetchImpl })
@@ -284,6 +290,7 @@ describe("Command Code quota", () => {
     if (!result.ok) return
     assert.equal(result.quota.summary?.totalTokens, 74_200_000)
     assert.equal(result.quota.account.keyName, "Pi Agent")
+    assert.equal(result.quota.subscription?.currentPeriodEnd, "1769904000000")
   })
 
   it("rejects missing API keys as a config error", async () => {
@@ -327,13 +334,13 @@ describe("Command Code quota", () => {
       summary: { totalCost: 12.34, totalCount: 1500 },
     }
 
-    const output = formatQuota(quota, () => 1_700_000_000_000)
+    const output = formatQuota(quota, () => Date.parse("2026-01-15T00:00:00Z"))
     assert.doesNotMatch(output, /Command Code quota —/)
     assert.match(output, /Credits/)
     assert.match(output, /Remaining: \$55\.00 of \$67\.34/)
     assert.match(output, /Used: \$12\.34/)
     assert.match(output, /Sources: monthly \$40\.00 \/ purchased \$10\.00 \/ free \$5\.00/)
-    assert.match(output, /Plan: pro \(active\)/)
+    assert.match(output, /Plan: pro \(active\) · renews Feb 1 \(17d\)/)
     assert.match(output, /Usage \(billing period\)/)
     assert.match(output, /Cost: \$12\.34/)
     assert.match(output, /Requests: 1,500/)
@@ -342,6 +349,48 @@ describe("Command Code quota", () => {
     assert.match(output, /5-hour: 8\.00 \/ 16\.00 credits/)
     assert.match(output, /Weekly: 20\.00 \/ 40\.00 credits/)
     assert.match(output, /https:\/\/commandcode\.ai\/usage/)
+  })
+
+  it("formats renewal dates in UTC and handles renewal edge cases", () => {
+    const baseQuota: CommandCodeQuota = {
+      account: { login: "alice", orgId: null },
+      credits: null,
+      subscription: null,
+      summary: null,
+    }
+    const formatRenewal = (currentPeriodEnd: string | null, now: string) =>
+      formatQuota(
+        {
+          ...baseQuota,
+          subscription: {
+            planId: "pro",
+            status: "active",
+            currentPeriodStart: null,
+            currentPeriodEnd,
+          },
+        },
+        () => Date.parse(now),
+      )
+
+    const beforeReset = formatRenewal("2026-02-01T00:00:00Z", "2026-01-31T12:00:00Z")
+    assert.match(beforeReset, /Plan: pro \(active\) · renews Feb 1 \(1d\)/)
+
+    const numericTimestamp = formatRenewal(
+      String(Date.parse("2026-02-01T00:00:00Z")),
+      "2026-01-31T12:00:00Z",
+    )
+    assert.match(numericTimestamp, /Plan: pro \(active\) · renews Feb 1 \(1d\)/)
+
+    const today = formatRenewal("2026-01-31T12:00:00Z", "2026-01-31T12:00:00Z")
+    assert.match(today, /Plan: pro \(active\) · renews Jan 31 \(today\)/)
+
+    const expired = formatRenewal("2026-01-30T00:00:00Z", "2026-01-31T12:00:00Z")
+    assert.match(expired, /Plan: pro \(active\) · renewed Jan 30/)
+
+    for (const currentPeriodEnd of [null, "not-a-date"]) {
+      const output = formatRenewal(currentPeriodEnd, "2026-01-31T12:00:00Z")
+      assert.doesNotMatch(output, /renews|renewed/)
+    }
   })
 
   it("redacts token-like values from error messages", () => {

@@ -43,6 +43,13 @@ function stringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined
 }
 
+function timestampValue(value: unknown): string | undefined {
+  const text = stringValue(value)
+  if (text) return text
+  const number = numberValue(value)
+  return number === undefined ? undefined : String(number)
+}
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
@@ -100,8 +107,8 @@ function parseSubscription(value: unknown): CommandCodeSubscription | null {
   const data = value.data
   const planId = stringValue(data.planId)
   const status = stringValue(data.status)
-  const currentPeriodStart = stringValue(data.currentPeriodStart)
-  const currentPeriodEnd = stringValue(data.currentPeriodEnd)
+  const currentPeriodStart = timestampValue(data.currentPeriodStart)
+  const currentPeriodEnd = timestampValue(data.currentPeriodEnd)
   if (!planId && !status && !currentPeriodStart && !currentPeriodEnd) return null
   return {
     planId: planId ?? null,
