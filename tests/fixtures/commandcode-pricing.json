@@ -1,5 +1,5 @@
 {
-  "verifiedAt": "2026-08-25",
+  "verifiedAt": "2026-08-28",
   "source": "https://commandcode.ai/docs/resources/pricing-limits",
   "tierPolicy": "Use request-wide input tiers; the highest threshold exceeded by input plus cache tokens applies to the full request.",
   "tiers": {
@@ -40,12 +40,14 @@
     "Qwen/Qwen3.6-Plus": [0.5, 3, 0.1, 0],
     "stepfun/Step-3.7-Flash": [0.2, 1.15, 0.04, 0],
     "stepfun/Step-3.5-Flash": [0.1, 0.3, 0.02, 0],
+    "minimax/minimax-m3-free": [0, 0, 0, 0],
+    "minimax/minimax-m2.7-free": [0, 0, 0, 0],
     "tencent/hy3-paid": [0.14, 0.58, 0.035, 0],
+    "tencent/hy4-preview": [0.834, 2.501, 0.042, 0],
     "nvidia/nemotron-3-ultra-550b-a55b": [0.6, 2.4, 0.12, 0],
     "thinkingmachines/inkling": [1, 4.05, 0.17, 0],
     "thinkingmachines/inkling-small": [0.5, 1.2, 0.1, 0],
     "poolside/laguna-s-2.1-free": [0, 0, 0, 0],
-    "stealth/ox-alpha": [0, 0, 0, 0],
     "claude-sonnet-5": [2, 10, 0.2, 2.5],
     "claude-sonnet-4-6": [3, 15, 0.3, 3.75],
     "claude-fable-5": [10, 50, 1, 12.5],

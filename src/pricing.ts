@@ -20,7 +20,7 @@ export interface TemporaryPricing {
 }
 
 export const PRICING_SOURCE_URL = "https://commandcode.ai/docs/resources/pricing-limits"
-export const PRICING_LAST_VERIFIED = "2026-08-25"
+export const PRICING_LAST_VERIFIED = "2026-08-28"
 
 export const ZERO_MODEL_COST: CommandCodeModelCost = {
   input: 0,
@@ -40,10 +40,12 @@ export const ZERO_MODEL_COST: CommandCodeModelCost = {
 export const MODEL_COSTS: Readonly<Record<string, CommandCodeModelCost>> = {
   // Free models
   "poolside/laguna-s-2.1-free": { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-  "stealth/ox-alpha": { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  "minimax/minimax-m3-free": { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  "minimax/minimax-m2.7-free": { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
 
   // Open and open-weight models
   "tencent/hy3-paid": { input: 0.14, output: 0.58, cacheRead: 0.035, cacheWrite: 0 },
+  "tencent/hy4-preview": { input: 0.834, output: 2.501, cacheRead: 0.042, cacheWrite: 0 },
   "moonshotai/Kimi-K3": { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 0 },
   "moonshotai/Kimi-K2.7-Code": { input: 0.95, output: 4, cacheRead: 0.19, cacheWrite: 0 },
   "moonshotai/Kimi-K2.7-Code-Highspeed": {
@@ -232,5 +234,10 @@ export const TEMPORARY_PRICING: readonly TemporaryPricing[] = [
     models: ["google/gemini-3.7-flash"],
     expiresOn: "2026-12-31",
     description: "50% promotional pricing",
+  },
+  {
+    models: ["minimax/minimax-m3-free", "minimax/minimax-m2.7-free"],
+    expiresOn: "2026-09-05",
+    description: "free promotional pricing",
   },
 ]
