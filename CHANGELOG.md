@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix `npm run sync:commandcode-catalog` and `npm run check:commandcode-catalog` on Windows by spawning npm through the shell.
+
 ## 0.6.0 - 2026-08-25
 
 - Allow switching from a vision-capable model to a text-only model by omitting historical image tool results while preserving their text output; direct image prompts still fail clearly.
