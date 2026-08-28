@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fix `npm run sync:commandcode-catalog` and `npm run check:commandcode-catalog` on Windows by spawning npm through the shell.
+- Add a `refresh-model-catalog` agent skill with cross-platform helper scripts that snapshot the live model catalog and regenerate the pricing fixture from `MODEL_COSTS`.
 
 ## 0.6.0 - 2026-08-25
 
