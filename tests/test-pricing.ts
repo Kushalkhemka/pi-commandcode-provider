@@ -144,6 +144,18 @@ describe("MODEL_COSTS pricing overlay", () => {
       cacheRead: 0.04,
       cacheWrite: 0,
     })
+    assertCost("Qwen/Qwen3.8-Flash", {
+      input: 0.16,
+      output: 0.47,
+      cacheRead: 0.016,
+      cacheWrite: 0,
+    })
+    assertCost("z-ai/glm-5.3-flash", {
+      input: 0.15,
+      output: 0.5,
+      cacheRead: 0.03,
+      cacheWrite: 0,
+    })
     assertCost("google/gemini-3.7-flash", {
       input: 0.75,
       output: 3.75,
