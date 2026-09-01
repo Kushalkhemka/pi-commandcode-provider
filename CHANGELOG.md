@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Stop silently dropping `role: "developer"` messages (for example OMP advisor steering notes, reminders, and nudges). `/alpha/generate` only accepts `user`, `assistant`, and `tool` roles, so developer messages are now forwarded as `user` messages with identical content in the same chronological position instead of disappearing from the request.
+
 ## 0.6.0 - 2026-08-25
 
 - Allow switching from a vision-capable model to a text-only model by omitting historical image tool results while preserving their text output; direct image prompts still fail clearly.
