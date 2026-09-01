@@ -31,6 +31,10 @@ omp plugin install pi-commandcode-provider
 
 Restart OMP or run `/reload`, then use `/login` and select **Use a subscription** followed by **Command Code**.
 
+## Other extensions
+
+Command Code models are registered under the custom `commandcode-custom` API. The provider also registers that API in the `@earendil-works/pi-ai/compat` registry, so sibling extensions that stream through `streamSimple` from that entrypoint with the active session model (background agents, memory workers, and similar) reach the same Command Code transport instead of failing with `No API provider registered for api: commandcode-custom`. When such a call passes no API key, the provider uses the configured Command Code credentials.
+
 ## Authentication
 
 ### Login dialog

@@ -6,7 +6,11 @@
  */
 
 import { AssistantMessageEventStream } from "@earendil-works/pi-ai"
-import { streamSimple as streamNativeProvider } from "@earendil-works/pi-ai/compat"
+import {
+  registerApiProvider,
+  streamSimple as streamNativeProvider,
+  type ApiStreamSimpleFunction,
+} from "@earendil-works/pi-ai/compat"
 import {
   getAgentDir,
   type ExtensionAPI,
@@ -37,6 +41,9 @@ import { registerCommandCodeQuota } from "./src/quota-command.ts"
 import { createCommandCodeRuntime } from "./src/runtime.ts"
 import { createCommandCodeTransportRouter } from "./src/transport.ts"
 
+const COMMAND_CODE_API = "commandcode-custom"
+const COMPAT_SOURCE_ID = "pi-commandcode-provider"
+
 function commandCodeHeaders(): Record<string, string> | undefined {
   if (process.env.CMD_ZDR === "1" || process.env.COMMANDCODE_ZDR === "1") {
     return { "x-cmd-zdr": "1" }
@@ -54,7 +61,7 @@ function createProviderConfig(
     name: "Command Code",
     baseUrl: apiBase,
     apiKey: getConfiguredApiKey() ?? "$COMMAND_CODE_API_KEY",
-    api: "commandcode-custom",
+    api: COMMAND_CODE_API,
     streamSimple: streamCommandCode,
     headers,
     oauth: {
@@ -66,7 +73,7 @@ function createProviderConfig(
     models: models.map((model) => ({
       id: model.id,
       name: model.name,
-      api: "commandcode-custom",
+      api: COMMAND_CODE_API,
       baseUrl: baseUrlForModel(apiBase, model.api),
       reasoning: model.reasoning,
       ...(thinkingMetadataForModel(model.id) ?? {}),
@@ -119,6 +126,24 @@ export default async function (pi: ExtensionAPI) {
       ),
     streamGenerate,
   })
+
+  // pi dispatches the main chat through the registered provider, but sibling
+  // extensions that call `streamSimple` from `@earendil-works/pi-ai/compat`
+  // with a Command Code model resolve `model.api` through the compat
+  // api-registry, which knows nothing about extension providers. Register the
+  // custom api there so those calls reach the same transport. The registry
+  // resolves no credentials for extension providers, so fall back to the
+  // configured key when the caller passes none.
+  const compatStream: ApiStreamSimpleFunction = (model, context, options) =>
+    transport.stream(
+      model,
+      context,
+      options?.apiKey ? options : { ...options, apiKey: getConfiguredApiKey() },
+    ) as AssistantMessageEventStream
+  registerApiProvider(
+    { api: COMMAND_CODE_API, stream: compatStream, streamSimple: compatStream },
+    COMPAT_SOURCE_ID,
+  )
 
   pi.on("message_end", async (event, ctx) => {
     if (event.message.role !== "assistant") return

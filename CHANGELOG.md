@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Register the `commandcode-custom` API in the `@earendil-works/pi-ai/compat` registry so sibling extensions that stream with the active Command Code model no longer fail with `No API provider registered for api: commandcode-custom` on plain pi.
+- Assert structural catalog invariants in the model tests so the daily catalog sync no longer fails on every upstream change.
+- Display the monthly renewal date and remaining days in `/commandcode-quota`.
 - Stop silently dropping `role: "developer"` messages (for example OMP advisor steering notes, reminders, and nudges). `/alpha/generate` only accepts `user`, `assistant`, and `tool` roles, so developer messages are now forwarded as `user` messages with identical content in the same chronological position instead of disappearing from the request.
 - Add `Qwen/Qwen3.8-Flash` and `z-ai/glm-5.3-flash` with their verified reasoning efforts (`low, medium, xhigh` and `low, high, max`) and display pricing.
 - Refresh static model capabilities from `command-code@1.40.1`, adding `claude-fable-5-1`, `deepseek/deepseek-v4-flash-fast`, and `tencent/hy4-preview` with their reasoning efforts, adding `moonshotai/Kimi-K3` efforts and the `z-ai/glm-5.3-flash` output limit, and dropping the retired `stealth/ox-alpha` and `minimax/minimax-m3-free`.
