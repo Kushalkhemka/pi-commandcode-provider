@@ -3,6 +3,9 @@
 ## Unreleased
 
 - Stop silently dropping `role: "developer"` messages (for example OMP advisor steering notes, reminders, and nudges). `/alpha/generate` only accepts `user`, `assistant`, and `tool` roles, so developer messages are now forwarded as `user` messages with identical content in the same chronological position instead of disappearing from the request.
+- Add `Qwen/Qwen3.8-Flash` and `z-ai/glm-5.3-flash` with their verified reasoning efforts (`low, medium, xhigh` and `low, high, max`) and display pricing.
+- Refresh static model capabilities from `command-code@1.36.0`, adding the free `minimax/minimax-m3-free` model and the `z-ai/glm-5.3-flash` output limit while dropping the retired `stealth/ox-alpha`.
+- Refresh display pricing for the current 62-model catalog, adding the free `minimax/minimax-m3-free` and `minimax/minimax-m2.7-free` promotional variants (free through September 5, 2026) and `tencent/hy4-preview`, and removing the retired `stealth/ox-alpha`.
 
 ## 0.6.0 - 2026-08-25
 

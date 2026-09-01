@@ -112,13 +112,15 @@ describe("commandCodeModelsFromApiResponse()", () => {
     ])
     assert.deepEqual(inputModalitiesForModel("Qwen/Qwen3.8-27B"), ["text", "image"])
     assert.deepEqual(inputModalitiesForModel("google/gemini-3.7-flash"), ["text", "image"])
-    assert.deepEqual(inputModalitiesForModel("stealth/ox-alpha"), ["text", "image"])
+    assert.deepEqual(inputModalitiesForModel("Qwen/Qwen3.8-Flash"), ["text", "image"])
+    assert.deepEqual(inputModalitiesForModel("z-ai/glm-5.3-flash"), ["text", "image"])
+    assert.deepEqual(inputModalitiesForModel("minimax/minimax-m3-free"), ["text", "image"])
     assert.deepEqual(inputModalitiesForModel("deepseek/deepseek-v4-pro"), ["text"])
     assert.deepEqual(inputModalitiesForModel("zai-org/GLM-5.3"), ["text"])
     assert.deepEqual(inputModalitiesForModel("unknown-new-model"), ["text"])
     assert.equal(modelSupportsImageInput("gpt-5.6-luna"), true)
     assert.equal(modelSupportsImageInput("deepseek/deepseek-v4-flash-vision-exp"), true)
-    assert.equal(modelSupportsImageInput("stealth/ox-alpha"), true)
+    assert.equal(modelSupportsImageInput("z-ai/glm-5.3-flash"), true)
     assert.equal(modelSupportsImageInput("deepseek/deepseek-v4-pro"), false)
     assert.ok(Object.keys(MODEL_INPUT_MODALITIES).length > 0)
     for (const modalities of Object.values(MODEL_INPUT_MODALITIES)) {
@@ -149,7 +151,7 @@ describe("commandCodeModelsFromApiResponse()", () => {
       },
     })
     assert.equal(models[2]?.reasoning, false)
-    assert.equal(Object.keys(MODEL_REASONING).length, 48)
+    assert.equal(Object.keys(MODEL_REASONING).length, 50)
   })
 
   it("uses model-specific output limits from the CLI catalog", () => {
@@ -157,7 +159,7 @@ describe("commandCodeModelsFromApiResponse()", () => {
       object: "list",
       data: [
         { ...API_RESPONSE.data[0], id: "Qwen/Qwen3.8-27B", context_length: 262_144 },
-        { ...API_RESPONSE.data[0], id: "stealth/ox-alpha", context_length: 1_048_576 },
+        { ...API_RESPONSE.data[0], id: "z-ai/glm-5.3-flash", context_length: 1_048_576 },
         {
           ...API_RESPONSE.data[0],
           id: "poolside/laguna-s-2.1-free",
@@ -170,7 +172,7 @@ describe("commandCodeModelsFromApiResponse()", () => {
       models.map(({ id, maxTokens }) => ({ id, maxTokens })),
       [
         { id: "Qwen/Qwen3.8-27B", maxTokens: 32_768 },
-        { id: "stealth/ox-alpha", maxTokens: 131_072 },
+        { id: "z-ai/glm-5.3-flash", maxTokens: 131_072 },
         { id: "poolside/laguna-s-2.1-free", maxTokens: 32_768 },
       ],
     )
@@ -212,6 +214,22 @@ describe("commandCodeModelsFromApiResponse()", () => {
     assert.deepEqual(thinkingLevelMapForEfforts(MODEL_EFFORTS["deepseek/deepseek-v4-flash"]), {
       minimal: null,
       low: null,
+      medium: null,
+      high: "high",
+      xhigh: null,
+      max: "max",
+    })
+    assert.deepEqual(thinkingLevelMapForEfforts(MODEL_EFFORTS["Qwen/Qwen3.8-Flash"]), {
+      minimal: null,
+      low: "low",
+      medium: "medium",
+      high: null,
+      xhigh: "xhigh",
+      max: null,
+    })
+    assert.deepEqual(thinkingLevelMapForEfforts(MODEL_EFFORTS["z-ai/glm-5.3-flash"]), {
+      minimal: null,
+      low: "low",
       medium: null,
       high: "high",
       xhigh: null,
