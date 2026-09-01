@@ -40,7 +40,9 @@ const expectedPlan =
       : testProfile === "provider"
         ? "provider"
         : undefined
-const goatVisionModel = process.env.COMMANDCODE_E2E_GOAT_VISION_MODEL ?? "google/gemini-3.7-flash"
+// GPT-5.6 Luna is available on every plan and has a ZDR-capable upstream;
+// Gemini 3.7 Flash currently fails with a zero-data-retention routing 404.
+const goatVisionModel = process.env.COMMANDCODE_E2E_GOAT_VISION_MODEL ?? "gpt-5.6-luna"
 const marker = "commandcode-live-e2e-ok"
 
 function findPiBinary() {

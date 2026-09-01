@@ -209,7 +209,7 @@ COMMANDCODE_E2E_GOAT_API_KEY_FILE=/path/to/goat-key \
 
 Each profile runs with an isolated Pi agent directory and asserts transport selection, reasoning across turns, quota plan identity, abort handling, tool calls, and the packed npm artifact. Go must select `generate` and reject unsupported images; GOAT must select `provider` and complete a live vision request. The profile-specific `*_API_KEY` environment variables are also supported for CI secrets, but key files are preferred for local use.
 
-The Go profile defaults to DeepSeek V4 Flash; GOAT defaults to Grok 4.6 because its Provider API stream exposes reasoning consistently across consecutive turns. Override them with `COMMANDCODE_E2E_GO_MODEL`, `COMMANDCODE_E2E_GOAT_MODEL`, or `COMMANDCODE_E2E_PROVIDER_MODEL`. A successful live Anthropic `/provider/v1/messages` test requires a paid account whose plan includes the selected Claude model.
+The Go profile defaults to DeepSeek V4 Flash; GOAT defaults to Grok 4.6 because its Provider API stream exposes reasoning consistently across consecutive turns. Override them with `COMMANDCODE_E2E_GO_MODEL`, `COMMANDCODE_E2E_GOAT_MODEL`, or `COMMANDCODE_E2E_PROVIDER_MODEL`. The GOAT vision phase defaults to GPT-5.6 Luna and can be overridden with `COMMANDCODE_E2E_GOAT_VISION_MODEL`. A successful live Anthropic `/provider/v1/messages` test requires a paid account whose plan includes the selected Claude model.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup and tests. See [RELEASE.md](RELEASE.md) for the release process.
 
