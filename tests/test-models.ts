@@ -4,7 +4,11 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, it } from "node:test"
 
-import { COMMAND_CODE_CLI_VERSION } from "../src/commandcode-catalog.ts"
+import { MODEL_EFFORT_OVERRIDES } from "../src/commandcode-catalog-overrides.ts"
+import {
+  COMMAND_CODE_CLI_VERSION,
+  MODEL_EFFORTS as CATALOG_MODEL_EFFORTS,
+} from "../src/commandcode-catalog.ts"
 import {
   apiForModelId,
   baseUrlForModel,
@@ -189,6 +193,26 @@ describe("commandCodeModelsFromApiResponse()", () => {
       assert.ok(efforts.length > 0)
       assert.equal(new Set(efforts).size, efforts.length)
       assert.ok(efforts.every((effort) => validEfforts.has(effort)))
+    }
+  })
+
+  it("merges manual effort overrides over the generated catalog", () => {
+    const validEfforts = new Set(["minimal", "low", "medium", "high", "xhigh", "max"])
+    assert.ok(Object.keys(MODEL_EFFORT_OVERRIDES).length > 0)
+    for (const [modelId, efforts] of Object.entries(MODEL_EFFORT_OVERRIDES)) {
+      assert.equal(MODEL_REASONING[modelId], true, `${modelId} override needs a reasoning flag`)
+      assert.equal(
+        CATALOG_MODEL_EFFORTS[modelId],
+        undefined,
+        `${modelId} now has upstream efforts; drop the manual override`,
+      )
+      assert.ok(efforts.length > 0)
+      assert.ok(efforts.every((effort) => validEfforts.has(effort)))
+      assert.deepEqual(MODEL_EFFORTS[modelId], efforts)
+      assert.deepEqual(thinkingMetadataForModel(modelId)?.thinking?.efforts, efforts)
+    }
+    for (const [modelId, efforts] of Object.entries(CATALOG_MODEL_EFFORTS)) {
+      assert.deepEqual(MODEL_EFFORTS[modelId], efforts, `${modelId} upstream efforts changed`)
     }
   })
 
