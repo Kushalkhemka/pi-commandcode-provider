@@ -18,6 +18,26 @@ const MODELS_REFERENCE_PATH = "dist/bundled/command-code-knowledge/reference/mod
 const CLI_BUNDLE_PATH = "dist/cli.mjs"
 const TEXT_ONLY_MARKER = ',__name(isKnownTextOnlyModel,"isKnownTextOnlyModel")'
 const VALID_EFFORTS = new Set(["minimal", "low", "medium", "high", "xhigh", "max"])
+
+function quoteWindowsArgument(argument: string): string {
+  if (argument.length === 0) return '""'
+  if (!/[\s"]/.test(argument)) return argument
+  return `"${argument.replaceAll('"', '\\"')}"`
+}
+
+/**
+ * Run npm on Windows and POSIX. npm is a `.cmd` shim on Windows, which
+ * execFile cannot spawn directly, so route it through the shell there with
+ * shell-safe quoting.
+ */
+function execNpmFileAsync(
+  args: readonly string[],
+  options: { cwd: string; encoding: "utf-8"; maxBuffer?: number },
+): Promise<{ stdout: string }> {
+  if (process.platform !== "win32") return execFileAsync("npm", args, options)
+  const command = ["npm", ...args.map(quoteWindowsArgument)].join(" ")
+  return execFileAsync(command, { ...options, shell: true })
+}
 const CATALOG_SOURCE_PATH = new URL("../../src/commandcode-catalog.ts", import.meta.url)
 const README_PATH = new URL("../../README.md", import.meta.url)
 
@@ -417,8 +437,7 @@ async function resolvePackageSpec(
 ): Promise<string> {
   if (packageSpec !== "command-code@latest") return packageSpec
 
-  const { stdout } = await execFileAsync(
-    "npm",
+  const { stdout } = await execNpmFileAsync(
     ["view", packageSpec, "version", "--json", "--prefer-online", "--cache", npmCacheDirectory],
     {
       cwd: directory,
@@ -437,8 +456,7 @@ async function inspectPackedPackage(packageSpec: string): Promise<{
 
   try {
     const resolvedPackageSpec = await resolvePackageSpec(packageSpec, directory, npmCacheDirectory)
-    const { stdout } = await execFileAsync(
-      "npm",
+    const { stdout } = await execNpmFileAsync(
       ["pack", resolvedPackageSpec, "--json", "--prefer-online", "--cache", npmCacheDirectory],
       {
         cwd: directory,
