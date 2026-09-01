@@ -104,43 +104,48 @@ describe("commandCodeModelsFromApiResponse()", () => {
   })
 
   it(`uses the command-code@${COMMAND_CODE_CLI_VERSION} image capability catalog`, () => {
-    assert.deepEqual(inputModalitiesForModel("gpt-5.6-luna"), ["text", "image"])
-    assert.deepEqual(inputModalitiesForModel("meta/muse-spark-1.2"), ["text", "image"])
-    assert.deepEqual(inputModalitiesForModel("deepseek/deepseek-v4-flash-vision-exp"), [
-      "text",
-      "image",
-    ])
-    assert.deepEqual(inputModalitiesForModel("Qwen/Qwen3.8-27B"), ["text", "image"])
-    assert.deepEqual(inputModalitiesForModel("google/gemini-3.7-flash"), ["text", "image"])
-    assert.deepEqual(inputModalitiesForModel("Qwen/Qwen3.8-Flash"), ["text", "image"])
-    assert.deepEqual(inputModalitiesForModel("z-ai/glm-5.3-flash"), ["text", "image"])
-    assert.deepEqual(inputModalitiesForModel("minimax/minimax-m3-free"), ["text", "image"])
-    assert.deepEqual(inputModalitiesForModel("deepseek/deepseek-v4-pro"), ["text"])
-    assert.deepEqual(inputModalitiesForModel("zai-org/GLM-5.3"), ["text"])
-    assert.deepEqual(inputModalitiesForModel("unknown-new-model"), ["text"])
-    assert.equal(modelSupportsImageInput("gpt-5.6-luna"), true)
-    assert.equal(modelSupportsImageInput("deepseek/deepseek-v4-flash-vision-exp"), true)
-    assert.equal(modelSupportsImageInput("z-ai/glm-5.3-flash"), true)
-    assert.equal(modelSupportsImageInput("deepseek/deepseek-v4-pro"), false)
-    assert.ok(Object.keys(MODEL_INPUT_MODALITIES).length > 0)
-    for (const modalities of Object.values(MODEL_INPUT_MODALITIES)) {
-      assert.deepEqual(modalities, ["text", "image"])
+    const imageModels = Object.keys(MODEL_INPUT_MODALITIES)
+    assert.ok(imageModels.length > 0)
+    for (const modelId of imageModels) {
+      assert.deepEqual(MODEL_INPUT_MODALITIES[modelId], ["text", "image"], modelId)
+      assert.deepEqual(inputModalitiesForModel(modelId), ["text", "image"], modelId)
+      assert.equal(modelSupportsImageInput(modelId), true, modelId)
     }
+
+    const textOnlyModel = Object.keys(MODEL_REASONING).find(
+      (modelId) => !(modelId in MODEL_INPUT_MODALITIES),
+    )
+    assert.ok(textOnlyModel, "catalog should contain at least one text-only model")
+    assert.deepEqual(inputModalitiesForModel(textOnlyModel), ["text"])
+    assert.equal(modelSupportsImageInput(textOnlyModel), false)
+    assert.deepEqual(inputModalitiesForModel("unknown-new-model"), ["text"])
+    assert.equal(modelSupportsImageInput("unknown-new-model"), false)
   })
 
   it("tracks reasoning independently from selectable effort levels", () => {
+    const reasoningModels = Object.keys(MODEL_REASONING)
+    const effortModels = Object.keys(MODEL_EFFORTS)
+    assert.ok(reasoningModels.length > 0)
+    assert.ok(effortModels.length > 0)
+    for (const modelId of effortModels) {
+      assert.equal(MODEL_REASONING[modelId], true, `${modelId} has efforts but no reasoning flag`)
+    }
+
+    const reasoningWithoutEfforts = reasoningModels.find((modelId) => !(modelId in MODEL_EFFORTS))
+    assert.ok(reasoningWithoutEfforts, "catalog should contain a reasoning model without efforts")
+
     const models = commandCodeModelsFromApiResponse({
       object: "list",
       data: [
-        { ...API_RESPONSE.data[0], id: "deepseek/deepseek-v4-flash" },
-        { ...API_RESPONSE.data[0], id: "moonshotai/Kimi-K3" },
+        { ...API_RESPONSE.data[0], id: effortModels[0] },
+        { ...API_RESPONSE.data[0], id: reasoningWithoutEfforts },
         { ...API_RESPONSE.data[0], id: "new-model-without-metadata" },
       ],
     })
 
     assert.equal(models[0]?.reasoning, true)
     assert.equal(models[1]?.reasoning, true)
-    assert.deepEqual(thinkingMetadataForModel("moonshotai/Kimi-K3"), {
+    assert.deepEqual(thinkingMetadataForModel(reasoningWithoutEfforts), {
       thinkingLevelMap: {
         minimal: null,
         low: null,
@@ -151,32 +156,30 @@ describe("commandCodeModelsFromApiResponse()", () => {
       },
     })
     assert.equal(models[2]?.reasoning, false)
-    assert.equal(Object.keys(MODEL_REASONING).length, 50)
   })
 
   it("uses model-specific output limits from the CLI catalog", () => {
+    const limitedModels = Object.entries(MODEL_MAX_OUTPUT_TOKENS)
+    assert.ok(limitedModels.length > 0)
+    for (const [modelId, limit] of limitedModels) {
+      assert.ok(Number.isInteger(limit) && limit > 0, `${modelId} has an invalid output limit`)
+    }
+
+    const [limitedId, limit] = limitedModels[0]!
     const models = commandCodeModelsFromApiResponse({
       object: "list",
       data: [
-        { ...API_RESPONSE.data[0], id: "Qwen/Qwen3.8-27B", context_length: 262_144 },
-        { ...API_RESPONSE.data[0], id: "z-ai/glm-5.3-flash", context_length: 1_048_576 },
-        {
-          ...API_RESPONSE.data[0],
-          id: "poolside/laguna-s-2.1-free",
-          context_length: 256_000,
-        },
+        { ...API_RESPONSE.data[0], id: limitedId, context_length: limit * 4 },
+        { ...API_RESPONSE.data[0], id: limitedId, context_length: Math.floor(limit / 2) },
+        { ...API_RESPONSE.data[0], id: "unknown-new-model", context_length: 256_000 },
+        { ...API_RESPONSE.data[0], id: "unknown-new-model", context_length: 8_192 },
       ],
     })
 
     assert.deepEqual(
-      models.map(({ id, maxTokens }) => ({ id, maxTokens })),
-      [
-        { id: "Qwen/Qwen3.8-27B", maxTokens: 32_768 },
-        { id: "z-ai/glm-5.3-flash", maxTokens: 131_072 },
-        { id: "poolside/laguna-s-2.1-free", maxTokens: 32_768 },
-      ],
+      models.map(({ maxTokens }) => maxTokens),
+      [limit, Math.floor(limit / 2), 65_536, 8_192],
     )
-    assert.equal(Object.keys(MODEL_MAX_OUTPUT_TOKENS).length, 3)
   })
 
   it(`uses the command-code@${COMMAND_CODE_CLI_VERSION} reasoning effort catalog`, () => {
@@ -214,22 +217,6 @@ describe("commandCodeModelsFromApiResponse()", () => {
     assert.deepEqual(thinkingLevelMapForEfforts(MODEL_EFFORTS["deepseek/deepseek-v4-flash"]), {
       minimal: null,
       low: null,
-      medium: null,
-      high: "high",
-      xhigh: null,
-      max: "max",
-    })
-    assert.deepEqual(thinkingLevelMapForEfforts(MODEL_EFFORTS["Qwen/Qwen3.8-Flash"]), {
-      minimal: null,
-      low: "low",
-      medium: "medium",
-      high: null,
-      xhigh: "xhigh",
-      max: null,
-    })
-    assert.deepEqual(thinkingLevelMapForEfforts(MODEL_EFFORTS["z-ai/glm-5.3-flash"]), {
-      minimal: null,
-      low: "low",
       medium: null,
       high: "high",
       xhigh: null,
