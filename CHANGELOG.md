@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Start from the cached model catalog and refresh it in the background instead of blocking host startup on the catalog request; a first start without a cache still waits for the live catalog.
 - Register the `commandcode-custom` API in the `@earendil-works/pi-ai/compat` registry so sibling extensions that stream with the active Command Code model no longer fail with `No API provider registered for api: commandcode-custom` on plain pi.
 - Assert structural catalog invariants in the model tests so the daily catalog sync no longer fails on every upstream change.
 - Display the monthly renewal date and remaining days in `/commandcode-quota`.

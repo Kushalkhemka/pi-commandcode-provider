@@ -29,6 +29,7 @@ import {
   DEFAULT_PROVIDER_API_BASE,
   getModelsTimeoutMs,
   inputModalitiesForModel,
+  loadCachedCommandCodeModels,
   loadCommandCodeModels,
   MODEL_EFFORTS,
   thinkingMetadataForModel,
@@ -159,14 +160,20 @@ export default async function (pi: ExtensionAPI) {
   const runtime = createCommandCodeRuntime<ProviderConfig, ExtensionCommandContext>(pi, {
     endpoint: modelsUrl,
     cachePath: modelsCachePath,
-    loadModels: () =>
+    loadModels: (signal) =>
       loadCommandCodeModels({
         url: modelsUrl,
         cachePath: modelsCachePath,
         timeoutMs: modelsTimeoutMs,
+        signal,
       }),
+    loadCachedModels: () => loadCachedCommandCodeModels(modelsCachePath),
     createProviderConfig: (models) => createProviderConfig(models, apiBase, transport.stream),
     getTransport: transport.getTransport,
+  })
+
+  pi.on("session_shutdown", () => {
+    runtime.dispose()
   })
 
   await runtime.initialize()

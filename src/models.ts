@@ -332,6 +332,17 @@ async function readCommandCodeModelsCache(cachePath: string): Promise<readonly C
   return commandCodeModelsFromCache(parsed)
 }
 
+/** Reads the cached catalog without touching the network; empty when missing or invalid. */
+export async function loadCachedCommandCodeModels(
+  cachePath: string,
+): Promise<readonly CommandCodeModel[]> {
+  try {
+    return await readCommandCodeModelsCache(cachePath)
+  } catch {
+    return []
+  }
+}
+
 async function writeCommandCodeModelsCache(
   cachePath: string,
   models: readonly CommandCodeModel[],

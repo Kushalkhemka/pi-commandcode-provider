@@ -753,6 +753,37 @@ try {
   modelsDelayMs = 0
   delete env.COMMANDCODE_MODELS_TIMEOUT_MS
 
+  console.log("[pi-local] cached catalog starts without waiting for slow discovery")
+  const warmup = await runPi(
+    ["--no-extensions", "-e", EXT_PATH, "--list-models", "commandcode"],
+    20_000,
+  )
+  assert.equal(warmup.code, 0, warmup.stderr)
+  assert.doesNotThrow(() => accessSync(modelsCachePath, constants.R_OK))
+  modelsDelayMs = 5_000
+  requestCount = 0
+  const cachedStartedAt = Date.now()
+  const cachedPrint = await runPi(
+    [
+      "--no-extensions",
+      "-e",
+      EXT_PATH,
+      "-p",
+      "say mock token",
+      "--provider",
+      "commandcode",
+      "--model",
+      TEST_MODEL,
+    ],
+    30_000,
+  )
+  const cachedElapsedMs = Date.now() - cachedStartedAt
+  assert.equal(cachedPrint.code, 0, cachedPrint.stderr)
+  assert.match(cachedPrint.stdout, /mock-pi-ok/)
+  assert.equal(requestCount, 1)
+  assert.ok(cachedElapsedMs < 5_000, `cached start took ${cachedElapsedMs}ms`)
+  modelsDelayMs = 0
+
   console.log("[pi-local] print mode with reasoning and tool schemas")
   requestCount = 0
   const print = await runPi(
