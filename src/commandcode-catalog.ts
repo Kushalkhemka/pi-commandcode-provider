@@ -1,14 +1,15 @@
-export const COMMAND_CODE_CLI_VERSION = "1.36.0"
+export const COMMAND_CODE_CLI_VERSION = "1.40.1"
 
 export type CommandCodeInputType = "text" | "image"
 export type CommandCodeReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max"
 
 /**
- * Generated from command-code@1.36.0 by `npm run sync:commandcode-catalog`.
+ * Generated from command-code@1.40.1 by `npm run sync:commandcode-catalog`.
  * Do not edit manually.
  */
 export const MODEL_INPUT_MODALITIES: Readonly<Record<string, readonly CommandCodeInputType[]>> = {
   "claude-fable-5": ["text", "image"],
+  "claude-fable-5-1": ["text", "image"],
   "claude-haiku-4-5-20251001": ["text", "image"],
   "claude-opus-4-7": ["text", "image"],
   "claude-opus-4-8": ["text", "image"],
@@ -31,7 +32,6 @@ export const MODEL_INPUT_MODALITIES: Readonly<Record<string, readonly CommandCod
   "meta/muse-spark-1.1": ["text", "image"],
   "meta/muse-spark-1.2": ["text", "image"],
   "meta/muse-spark-1.2-contributor": ["text", "image"],
-  "minimax/minimax-m3-free": ["text", "image"],
   "MiniMaxAI/MiniMax-M3": ["text", "image"],
   "moonshotai/Kimi-K2.5": ["text", "image"],
   "moonshotai/Kimi-K2.6": ["text", "image"],
@@ -55,12 +55,14 @@ export const MODEL_INPUT_MODALITIES: Readonly<Record<string, readonly CommandCod
 
 export const MODEL_REASONING: Readonly<Record<string, true>> = {
   "claude-fable-5": true,
+  "claude-fable-5-1": true,
   "claude-opus-4-7": true,
   "claude-opus-4-8": true,
   "claude-opus-5": true,
   "claude-sonnet-4-6": true,
   "claude-sonnet-5": true,
   "deepseek/deepseek-v4-flash": true,
+  "deepseek/deepseek-v4-flash-fast": true,
   "deepseek/deepseek-v4-flash-vision-exp": true,
   "deepseek/deepseek-v4-pro": true,
   "google/gemini-3.1-flash-lite": true,
@@ -78,7 +80,6 @@ export const MODEL_REASONING: Readonly<Record<string, true>> = {
   "meta/muse-spark-1.1": true,
   "meta/muse-spark-1.2": true,
   "meta/muse-spark-1.2-contributor": true,
-  "minimax/minimax-m3-free": true,
   "MiniMaxAI/MiniMax-M3": true,
   "moonshotai/Kimi-K2.7-Code": true,
   "moonshotai/Kimi-K2.7-Code-Highspeed": true,
@@ -97,6 +98,7 @@ export const MODEL_REASONING: Readonly<Record<string, true>> = {
   "stepfun/Step-3.5-Flash": true,
   "stepfun/Step-3.7-Flash": true,
   "tencent/hy3-paid": true,
+  "tencent/hy4-preview": true,
   "thinkingmachines/inkling": true,
   "thinkingmachines/inkling-small": true,
   "xai/grok-4.5": true,
@@ -108,12 +110,14 @@ export const MODEL_REASONING: Readonly<Record<string, true>> = {
 
 export const MODEL_EFFORTS: Readonly<Record<string, readonly CommandCodeReasoningEffort[]>> = {
   "claude-fable-5": ["low", "medium", "high", "xhigh", "max"],
+  "claude-fable-5-1": ["low", "medium", "high", "xhigh", "max"],
   "claude-opus-4-7": ["low", "medium", "high", "xhigh", "max"],
   "claude-opus-4-8": ["low", "medium", "high", "xhigh", "max"],
   "claude-opus-5": ["low", "medium", "high", "xhigh", "max"],
   "claude-sonnet-4-6": ["low", "medium", "high", "xhigh", "max"],
   "claude-sonnet-5": ["low", "medium", "high", "xhigh", "max"],
   "deepseek/deepseek-v4-flash": ["high", "max"],
+  "deepseek/deepseek-v4-flash-fast": ["low", "high", "max"],
   "deepseek/deepseek-v4-flash-vision-exp": ["high", "max"],
   "deepseek/deepseek-v4-pro": ["high", "max"],
   "google/gemini-3.1-flash-lite": ["low", "medium", "high"],
@@ -128,10 +132,12 @@ export const MODEL_EFFORTS: Readonly<Record<string, readonly CommandCodeReasonin
   "gpt-5.6-luna": ["low", "medium", "high", "xhigh", "max"],
   "gpt-5.6-sol": ["low", "medium", "high", "xhigh", "max"],
   "gpt-5.6-terra": ["low", "medium", "high", "xhigh", "max"],
+  "moonshotai/Kimi-K3": ["low", "high", "max"],
   "Qwen/Qwen3.8-27B": ["low", "medium", "xhigh"],
   "Qwen/Qwen3.8-Flash": ["low", "medium", "xhigh"],
   "Qwen/Qwen3.8-Max": ["low", "medium", "xhigh"],
   "sakana/fugu-ultra": ["high", "xhigh"],
+  "tencent/hy4-preview": ["low", "medium", "high"],
   "xai/grok-4.5": ["low", "medium", "high"],
   "xai/grok-4.6": ["low", "medium", "high", "xhigh"],
   "z-ai/glm-5.3-flash": ["low", "high", "max"],
