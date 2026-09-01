@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.6.1 - 2026-09-01
+
 - Expose selectable thinking levels (`minimal`, `low`, `medium`, `high`, `xhigh`) for `meta/muse-spark-1.1`, `meta/muse-spark-1.2`, and `meta/muse-spark-1.2-contributor` through a manual catalog override, so `/thinking` and `Shift+Tab` no longer stay locked on `off` for these reasoning models.
 - Start from the cached model catalog and refresh it in the background instead of blocking host startup on the catalog request; a first start without a cache still waits for the live catalog.
 - Register the `commandcode-custom` API in the `@earendil-works/pi-ai/compat` registry so sibling extensions that stream with the active Command Code model no longer fail with `No API provider registered for api: commandcode-custom` on plain pi.
@@ -13,6 +15,16 @@
 - Refresh display pricing for the current 62-model catalog, adding `claude-fable-5-1`, `deepseek/deepseek-v4-flash-fast`, and `tencent/hy4-preview`, removing the retired `stealth/ox-alpha`, `minimax/minimax-m3-free`, and `minimax/minimax-m2.7-free`, and ending the expired Claude Sonnet 5 introductory and Gemini 3.7 Flash promotional windows.
 - Fix `npm run sync:commandcode-catalog` and `npm run check:commandcode-catalog` on Windows by spawning npm through the shell.
 - Add a `refresh-model-catalog` agent skill with cross-platform helper scripts that snapshot the live model catalog and regenerate the pricing fixture from `MODEL_COSTS`.
+
+### Contributors
+
+- @warc0s — preserved developer messages on the `/alpha/generate` transport with OMP advisory coverage.
+- @jagaliano — added the quota renewal date and diagnosed the failing daily catalog sync.
+- @ThomasByr — added GLM 5.3 Flash and Qwen 3.8 Flash and contributed the `refresh-model-catalog` skill.
+- @hjshin-ubob — proposed selectable thinking levels for the Muse Spark models.
+- @Sokoshy — analyzed the `commandcode-custom` compat registry failure on plain pi.
+- @CoderTCY — measured and proposed the cache-first catalog startup.
+- @MertSoylu — reported the missing GLM 5.3 Flash effort levels.
 
 ## 0.6.0 - 2026-08-25
 
