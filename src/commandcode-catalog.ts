@@ -1,14 +1,15 @@
-export const COMMAND_CODE_CLI_VERSION = "1.32.2"
+export const COMMAND_CODE_CLI_VERSION = "1.40.1"
 
 export type CommandCodeInputType = "text" | "image"
 export type CommandCodeReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max"
 
 /**
- * Generated from command-code@1.32.2 by `npm run sync:commandcode-catalog`.
+ * Generated from command-code@1.40.1 by `npm run sync:commandcode-catalog`.
  * Do not edit manually.
  */
 export const MODEL_INPUT_MODALITIES: Readonly<Record<string, readonly CommandCodeInputType[]>> = {
   "claude-fable-5": ["text", "image"],
+  "claude-fable-5-1": ["text", "image"],
   "claude-haiku-4-5-20251001": ["text", "image"],
   "claude-opus-4-7": ["text", "image"],
   "claude-opus-4-8": ["text", "image"],
@@ -41,24 +42,27 @@ export const MODEL_INPUT_MODALITIES: Readonly<Record<string, readonly CommandCod
   "Qwen/Qwen3.7-Flash": ["text", "image"],
   "Qwen/Qwen3.7-Plus": ["text", "image"],
   "Qwen/Qwen3.8-27B": ["text", "image"],
+  "Qwen/Qwen3.8-Flash": ["text", "image"],
   "Qwen/Qwen3.8-Max": ["text", "image"],
   "sakana/fugu-ultra": ["text", "image"],
-  "stealth/ox-alpha": ["text", "image"],
   "stepfun/Step-3.7-Flash": ["text", "image"],
   "thinkingmachines/inkling": ["text", "image"],
   "thinkingmachines/inkling-small": ["text", "image"],
   "xai/grok-4.5": ["text", "image"],
   "xiaomi/mimo-v2.5": ["text", "image"],
+  "z-ai/glm-5.3-flash": ["text", "image"],
 }
 
 export const MODEL_REASONING: Readonly<Record<string, true>> = {
   "claude-fable-5": true,
+  "claude-fable-5-1": true,
   "claude-opus-4-7": true,
   "claude-opus-4-8": true,
   "claude-opus-5": true,
   "claude-sonnet-4-6": true,
   "claude-sonnet-5": true,
   "deepseek/deepseek-v4-flash": true,
+  "deepseek/deepseek-v4-flash-fast": true,
   "deepseek/deepseek-v4-flash-vision-exp": true,
   "deepseek/deepseek-v4-pro": true,
   "google/gemini-3.1-flash-lite": true,
@@ -88,28 +92,32 @@ export const MODEL_REASONING: Readonly<Record<string, true>> = {
   "Qwen/Qwen3.7-Max": true,
   "Qwen/Qwen3.7-Plus": true,
   "Qwen/Qwen3.8-27B": true,
+  "Qwen/Qwen3.8-Flash": true,
   "Qwen/Qwen3.8-Max": true,
   "sakana/fugu-ultra": true,
-  "stealth/ox-alpha": true,
   "stepfun/Step-3.5-Flash": true,
   "stepfun/Step-3.7-Flash": true,
   "tencent/hy3-paid": true,
+  "tencent/hy4-preview": true,
   "thinkingmachines/inkling": true,
   "thinkingmachines/inkling-small": true,
   "xai/grok-4.5": true,
   "xai/grok-4.6": true,
+  "z-ai/glm-5.3-flash": true,
   "zai-org/GLM-5.2": true,
   "zai-org/GLM-5.3": true,
 }
 
 export const MODEL_EFFORTS: Readonly<Record<string, readonly CommandCodeReasoningEffort[]>> = {
   "claude-fable-5": ["low", "medium", "high", "xhigh", "max"],
+  "claude-fable-5-1": ["low", "medium", "high", "xhigh", "max"],
   "claude-opus-4-7": ["low", "medium", "high", "xhigh", "max"],
   "claude-opus-4-8": ["low", "medium", "high", "xhigh", "max"],
   "claude-opus-5": ["low", "medium", "high", "xhigh", "max"],
   "claude-sonnet-4-6": ["low", "medium", "high", "xhigh", "max"],
   "claude-sonnet-5": ["low", "medium", "high", "xhigh", "max"],
   "deepseek/deepseek-v4-flash": ["high", "max"],
+  "deepseek/deepseek-v4-flash-fast": ["low", "high", "max"],
   "deepseek/deepseek-v4-flash-vision-exp": ["high", "max"],
   "deepseek/deepseek-v4-pro": ["high", "max"],
   "google/gemini-3.1-flash-lite": ["low", "medium", "high"],
@@ -124,12 +132,15 @@ export const MODEL_EFFORTS: Readonly<Record<string, readonly CommandCodeReasonin
   "gpt-5.6-luna": ["low", "medium", "high", "xhigh", "max"],
   "gpt-5.6-sol": ["low", "medium", "high", "xhigh", "max"],
   "gpt-5.6-terra": ["low", "medium", "high", "xhigh", "max"],
+  "moonshotai/Kimi-K3": ["low", "high", "max"],
   "Qwen/Qwen3.8-27B": ["low", "medium", "xhigh"],
+  "Qwen/Qwen3.8-Flash": ["low", "medium", "xhigh"],
   "Qwen/Qwen3.8-Max": ["low", "medium", "xhigh"],
   "sakana/fugu-ultra": ["high", "xhigh"],
-  "stealth/ox-alpha": ["low", "high", "max"],
+  "tencent/hy4-preview": ["low", "medium", "high"],
   "xai/grok-4.5": ["low", "medium", "high"],
   "xai/grok-4.6": ["low", "medium", "high", "xhigh"],
+  "z-ai/glm-5.3-flash": ["low", "high", "max"],
   "zai-org/GLM-5.2": ["high", "max"],
   "zai-org/GLM-5.3": ["low", "high", "max"],
 }
@@ -137,5 +148,5 @@ export const MODEL_EFFORTS: Readonly<Record<string, readonly CommandCodeReasonin
 export const MODEL_MAX_OUTPUT_TOKENS: Readonly<Record<string, number>> = {
   "poolside/laguna-s-2.1-free": 32_768,
   "Qwen/Qwen3.8-27B": 32_768,
-  "stealth/ox-alpha": 131_072,
+  "z-ai/glm-5.3-flash": 131_072,
 }

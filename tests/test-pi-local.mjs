@@ -15,6 +15,12 @@ import { fileURLToPath } from "node:url"
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROJECT_DIR = resolve(__dirname, "..")
 const EXT_PATH = resolve(PROJECT_DIR, "index.ts")
+const COMPAT_CALLER_EXT_PATH = resolve(
+  PROJECT_DIR,
+  "tests",
+  "fixtures",
+  "compat-caller-extension.ts",
+)
 const TEST_MODEL = "gpt-5.4"
 const CLAUDE_TEST_MODEL = "claude-sonnet-4-6"
 
@@ -486,6 +492,75 @@ async function runRpcExtensionCommands(timeoutMs = 30_000) {
   }
 }
 
+async function runRpcCompatCall(timeoutMs = 30_000) {
+  const child = spawn(
+    PI_BIN,
+    [
+      "--no-extensions",
+      "--mode",
+      "rpc",
+      "-e",
+      EXT_PATH,
+      "-e",
+      COMPAT_CALLER_EXT_PATH,
+      "--provider",
+      "commandcode",
+      "--model",
+      TEST_MODEL,
+    ],
+    {
+      cwd: PROJECT_DIR,
+      env,
+      stdio: ["pipe", "pipe", "pipe"],
+    },
+  )
+
+  let buffer = ""
+  let stderr = ""
+
+  const notification = new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`compat-call timeout. stderr: ${stderr.slice(-500)}`)),
+      timeoutMs,
+    )
+    child.stdout.on("data", (chunk) => {
+      buffer += chunk.toString("utf-8")
+      const lines = buffer.split("\n")
+      buffer = lines.pop() ?? ""
+      for (const line of lines) {
+        if (!line.trim()) continue
+        let event
+        try {
+          event = JSON.parse(line)
+        } catch {
+          continue
+        }
+        if (
+          event.type === "extension_ui_request" &&
+          event.method === "notify" &&
+          typeof event.message === "string" &&
+          event.message.startsWith("compat-call")
+        ) {
+          clearTimeout(timer)
+          resolve(event.message)
+        }
+      }
+    })
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString("utf-8")
+    })
+  })
+
+  try {
+    child.stdin.write(
+      `${JSON.stringify({ id: "compat", type: "prompt", message: "/compat-call" })}\n`,
+    )
+    return { message: await notification, stderr }
+  } finally {
+    child.kill()
+  }
+}
+
 async function runRpcOverflowRecovery(timeoutMs = 60_000) {
   const child = spawn(
     PI_BIN,
@@ -678,6 +753,37 @@ try {
   modelsDelayMs = 0
   delete env.COMMANDCODE_MODELS_TIMEOUT_MS
 
+  console.log("[pi-local] cached catalog starts without waiting for slow discovery")
+  const warmup = await runPi(
+    ["--no-extensions", "-e", EXT_PATH, "--list-models", "commandcode"],
+    20_000,
+  )
+  assert.equal(warmup.code, 0, warmup.stderr)
+  assert.doesNotThrow(() => accessSync(modelsCachePath, constants.R_OK))
+  modelsDelayMs = 5_000
+  requestCount = 0
+  const cachedStartedAt = Date.now()
+  const cachedPrint = await runPi(
+    [
+      "--no-extensions",
+      "-e",
+      EXT_PATH,
+      "-p",
+      "say mock token",
+      "--provider",
+      "commandcode",
+      "--model",
+      TEST_MODEL,
+    ],
+    30_000,
+  )
+  const cachedElapsedMs = Date.now() - cachedStartedAt
+  assert.equal(cachedPrint.code, 0, cachedPrint.stderr)
+  assert.match(cachedPrint.stdout, /mock-pi-ok/)
+  assert.equal(requestCount, 1)
+  assert.ok(cachedElapsedMs < 5_000, `cached start took ${cachedElapsedMs}ms`)
+  modelsDelayMs = 0
+
   console.log("[pi-local] print mode with reasoning and tool schemas")
   requestCount = 0
   const print = await runPi(
@@ -795,6 +901,18 @@ try {
   assert.ok(
     imageContent.some((part) => part.type === "image_url"),
     JSON.stringify(imageContent),
+  )
+
+  console.log("[pi-local] sibling extension streams through the pi-ai compat registry")
+  requestCount = 0
+  const compatCall = await runRpcCompatCall()
+  assert.equal(compatCall.message, "compat-call ok: mock-pi-ok", compatCall.stderr)
+  assert.equal(requestCount, 1)
+  assert.equal(lastRequestBody?.model, TEST_MODEL)
+  assert.ok(
+    typeof lastRequestHeaders.authorization === "string" &&
+      lastRequestHeaders.authorization.startsWith("Bearer "),
+    "compat call should send a bearer Authorization header",
   )
 
   console.log("[pi-local] verify overflow normalization and compaction recovery")

@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Expose selectable thinking levels (`minimal`, `low`, `medium`, `high`, `xhigh`) for `meta/muse-spark-1.1`, `meta/muse-spark-1.2`, and `meta/muse-spark-1.2-contributor` through a manual catalog override, so `/thinking` and `Shift+Tab` no longer stay locked on `off` for these reasoning models.
+- Start from the cached model catalog and refresh it in the background instead of blocking host startup on the catalog request; a first start without a cache still waits for the live catalog.
+- Register the `commandcode-custom` API in the `@earendil-works/pi-ai/compat` registry so sibling extensions that stream with the active Command Code model no longer fail with `No API provider registered for api: commandcode-custom` on plain pi.
+- Assert structural catalog invariants in the model tests so the daily catalog sync no longer fails on every upstream change.
+- Display the monthly renewal date and remaining days in `/commandcode-quota`.
+- Stop silently dropping `role: "developer"` messages (for example OMP advisor steering notes, reminders, and nudges). `/alpha/generate` only accepts `user`, `assistant`, and `tool` roles, so developer messages are now forwarded as `user` messages with identical content in the same chronological position instead of disappearing from the request.
+- Add `Qwen/Qwen3.8-Flash` and `z-ai/glm-5.3-flash` with their verified reasoning efforts (`low, medium, xhigh` and `low, high, max`) and display pricing.
+- Refresh static model capabilities from `command-code@1.40.1`, adding `claude-fable-5-1`, `deepseek/deepseek-v4-flash-fast`, and `tencent/hy4-preview` with their reasoning efforts, adding `moonshotai/Kimi-K3` efforts and the `z-ai/glm-5.3-flash` output limit, and dropping the retired `stealth/ox-alpha` and `minimax/minimax-m3-free`.
+- Refresh display pricing for the current 62-model catalog, adding `claude-fable-5-1`, `deepseek/deepseek-v4-flash-fast`, and `tencent/hy4-preview`, removing the retired `stealth/ox-alpha`, `minimax/minimax-m3-free`, and `minimax/minimax-m2.7-free`, and ending the expired Claude Sonnet 5 introductory and Gemini 3.7 Flash promotional windows.
+- Fix `npm run sync:commandcode-catalog` and `npm run check:commandcode-catalog` on Windows by spawning npm through the shell.
+- Add a `refresh-model-catalog` agent skill with cross-platform helper scripts that snapshot the live model catalog and regenerate the pricing fixture from `MODEL_COSTS`.
+
 ## 0.6.0 - 2026-08-25
 
 - Allow switching from a vision-capable model to a text-only model by omitting historical image tool results while preserving their text output; direct image prompts still fail clearly.

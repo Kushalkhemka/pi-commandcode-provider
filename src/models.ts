@@ -1,8 +1,9 @@
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises"
 import { dirname } from "node:path"
 
+import { MODEL_EFFORT_OVERRIDES } from "./commandcode-catalog-overrides.ts"
 import {
-  MODEL_EFFORTS,
+  MODEL_EFFORTS as CATALOG_MODEL_EFFORTS,
   MODEL_INPUT_MODALITIES,
   MODEL_MAX_OUTPUT_TOKENS,
   MODEL_REASONING,
@@ -10,7 +11,13 @@ import {
   type CommandCodeReasoningEffort,
 } from "./commandcode-catalog.ts"
 
-export { MODEL_EFFORTS, MODEL_INPUT_MODALITIES, MODEL_MAX_OUTPUT_TOKENS, MODEL_REASONING }
+/** Upstream CLI efforts with the manual overrides merged over them. */
+export const MODEL_EFFORTS: Readonly<Record<string, readonly CommandCodeReasoningEffort[]>> = {
+  ...CATALOG_MODEL_EFFORTS,
+  ...MODEL_EFFORT_OVERRIDES,
+}
+
+export { MODEL_INPUT_MODALITIES, MODEL_MAX_OUTPUT_TOKENS, MODEL_REASONING }
 export type { CommandCodeInputType }
 
 export const DEFAULT_PROVIDER_API_BASE = "https://api.commandcode.ai/provider/v1"
@@ -330,6 +337,17 @@ async function readCommandCodeModelsCache(cachePath: string): Promise<readonly C
   const contents = await readFile(cachePath, "utf-8")
   const parsed: unknown = JSON.parse(contents)
   return commandCodeModelsFromCache(parsed)
+}
+
+/** Reads the cached catalog without touching the network; empty when missing or invalid. */
+export async function loadCachedCommandCodeModels(
+  cachePath: string,
+): Promise<readonly CommandCodeModel[]> {
+  try {
+    return await readCommandCodeModelsCache(cachePath)
+  } catch {
+    return []
+  }
 }
 
 async function writeCommandCodeModelsCache(

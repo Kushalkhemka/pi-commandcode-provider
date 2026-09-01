@@ -19,7 +19,10 @@ import { fileURLToPath } from "node:url"
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROJECT_DIR = resolve(__dirname, "..")
 const EXT_PATH = resolve(PROJECT_DIR, "index.ts")
+const ADVISORY_EXT_PATH = resolve(PROJECT_DIR, "tests/fixtures/advisory-injector-extension.ts")
 const TEST_MODEL = "deepseek/deepseek-v4-flash"
+const ADVISORY_XML =
+  '<advisory severity="blocker" guidance="weigh, don\'t blindly obey">\nStop and correct the benchmark.\n</advisory>'
 
 function findOmpBinary() {
   if (process.env.OMP_BIN) return process.env.OMP_BIN
@@ -45,7 +48,11 @@ const tempHome = mkdtempSync(join(tmpdir(), "omp-cc-home-"))
 let requestCount = 0
 let modelListRequestCount = 0
 let lastRequestBody
+let requestBodies = []
 let lastRequestHeaders = {}
+// When true the mock Provider API answers 403 upgrade_required so the
+// transport router falls back to the legacy /alpha/generate transport.
+let providerUpgradeRequired = false
 
 const server = createServer((req, res) => {
   if (req.method === "GET" && req.url === "/provider/v1/models") {
@@ -77,7 +84,52 @@ const server = createServer((req, res) => {
     return
   }
 
-  if (req.method !== "POST" || req.url !== "/provider/v1/chat/completions") {
+  if (req.method === "POST" && req.url === "/provider/v1/chat/completions") {
+    requestCount += 1
+    lastRequestHeaders = Object.fromEntries(
+      Object.entries(req.headers).map(([key, value]) => [
+        key,
+        Array.isArray(value) ? value.join(", ") : (value ?? ""),
+      ]),
+    )
+
+    let body = ""
+    req.on("data", (chunk) => {
+      body += chunk.toString("utf-8")
+    })
+    req.on("end", () => {
+      try {
+        lastRequestBody = JSON.parse(body)
+        requestBodies.push(lastRequestBody)
+      } catch {
+        lastRequestBody = undefined
+      }
+
+      if (providerUpgradeRequired) {
+        res.writeHead(403, { "Content-Type": "application/json; charset=utf-8" })
+        res.end(JSON.stringify({ error: { code: "upgrade_required" } }))
+        return
+      }
+
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+      })
+      res.write(
+        `data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", choices: [{ index: 0, delta: { role: "assistant", content: "mock-omp-ok" }, finish_reason: null }] })}\n\n`,
+      )
+      res.write(
+        `data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", choices: [{ index: 0, delta: {}, finish_reason: "stop" }] })}\n\n`,
+      )
+      res.write(
+        `data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", choices: [], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } })}\n\n`,
+      )
+      res.end("data: [DONE]\n\n")
+    })
+    return
+  }
+
+  if (req.method !== "POST" || req.url !== "/alpha/generate") {
     res.writeHead(404)
     res.end("Not found")
     return
@@ -91,31 +143,27 @@ const server = createServer((req, res) => {
     ]),
   )
 
-  let body = ""
+  let generateBody = ""
   req.on("data", (chunk) => {
-    body += chunk.toString("utf-8")
+    generateBody += chunk.toString("utf-8")
   })
   req.on("end", () => {
     try {
-      lastRequestBody = JSON.parse(body)
+      lastRequestBody = JSON.parse(generateBody)
+      requestBodies.push(lastRequestBody)
     } catch {
       lastRequestBody = undefined
     }
 
     res.writeHead(200, {
-      "Content-Type": "text/event-stream; charset=utf-8",
+      "Content-Type": "text/plain; charset=utf-8",
       "Transfer-Encoding": "chunked",
     })
+    res.write(`${JSON.stringify({ type: "text-delta", text: "mock-omp-ok" })}\n`)
     res.write(
-      `data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", choices: [{ index: 0, delta: { role: "assistant", content: "mock-omp-ok" }, finish_reason: null }] })}\n\n`,
+      `${JSON.stringify({ type: "finish", finishReason: "stop", totalUsage: { inputTokens: 1, outputTokens: 1 } })}\n`,
     )
-    res.write(
-      `data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", choices: [{ index: 0, delta: {}, finish_reason: "stop" }] })}\n\n`,
-    )
-    res.write(
-      `data: ${JSON.stringify({ id: "mock", object: "chat.completion.chunk", choices: [], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } })}\n\n`,
-    )
-    res.end("data: [DONE]\n\n")
+    res.end()
   })
 })
 
@@ -176,7 +224,10 @@ try {
   const listOutput = result.stdout || result.stderr
   assert.match(listOutput, /commandcode/)
   assert.match(listOutput, /deepseek\/deepseek-v4-flash/)
-  assert.equal(modelListRequestCount, 1)
+  // The failed flag attempt may already load the extension and fetch the
+  // catalog once before the subcommand fallback runs, so only assert that
+  // the mock catalog was actually consulted.
+  assert.ok(modelListRequestCount >= 1)
   assert.doesNotThrow(() =>
     accessSync(join(tempHome, ".omp", "agent", "commandcode-models.json"), constants.R_OK),
   )
@@ -184,6 +235,7 @@ try {
 
   console.log("[omp-compat] print mode through real extension and mock API")
   requestCount = 0
+  requestBodies = []
   const print = await runOmp(
     ["-e", EXT_PATH, "-p", "say mock token", "--model", `commandcode/${TEST_MODEL}`],
     30_000,
@@ -198,6 +250,64 @@ try {
   )
   assert.equal(lastRequestBody?.model, TEST_MODEL)
   assert.ok(Array.isArray(lastRequestBody?.messages))
+
+  console.log("[omp-compat] developer advisory reaches the legacy generate request body")
+  requestCount = 0
+  requestBodies = []
+  providerUpgradeRequired = true
+  const advisoryRun = await runOmp(
+    [
+      "-e",
+      EXT_PATH,
+      "-e",
+      ADVISORY_EXT_PATH,
+      "-p",
+      "say mock token",
+      "--model",
+      `commandcode/${TEST_MODEL}`,
+      "--no-tools",
+      "--no-title",
+    ],
+    30_000,
+  )
+  assert.equal(advisoryRun.code, 0, advisoryRun.stderr)
+  assert.match(advisoryRun.stdout, /mock-omp-ok/)
+
+  const promptBodies = requestBodies.filter((body) =>
+    JSON.stringify(body?.params?.messages ?? []).includes("say mock token"),
+  )
+  assert.ok(promptBodies.length >= 1, "expected at least one generate request with the prompt")
+
+  for (const body of promptBodies) {
+    const messages = body?.params?.messages ?? []
+    const advisoryMessages = messages.filter((message) =>
+      JSON.stringify(message).includes("Stop and correct the benchmark."),
+    )
+    assert.equal(advisoryMessages.length, 1, "the advisory should survive conversion exactly once")
+    const advisoryMessage = advisoryMessages[0]
+    assert.equal(advisoryMessage.role, "user")
+    const advisoryText =
+      typeof advisoryMessage.content === "string"
+        ? advisoryMessage.content
+        : (advisoryMessage.content ?? [])
+            .map((part) => (part?.type === "text" ? part.text : ""))
+            .join("\n")
+    assert.equal(advisoryText, ADVISORY_XML, "advisory content must arrive verbatim")
+
+    const advisoryIndex = messages.indexOf(advisoryMessage)
+    const promptIndex = messages.findIndex((message) =>
+      JSON.stringify(message).includes("say mock token"),
+    )
+    assert.ok(
+      advisoryIndex < promptIndex,
+      "advisory must keep its chronological position relative to the prompt",
+    )
+    assert.doesNotMatch(
+      String(body?.params?.system ?? ""),
+      /Stop and correct the benchmark|<advisory/,
+      "advisory must not be hoisted into the system prompt",
+    )
+  }
 
   console.log("[omp-compat] PASS")
 } finally {

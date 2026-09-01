@@ -97,6 +97,7 @@ describe("Command Code runtime", () => {
       endpoint: "https://api.commandcode.ai/provider/v1/models?token=user_secret_value",
       cachePath: "/tmp/commandcode-models.json",
       loadModels: () => firstLoad.promise,
+      loadCachedModels: async () => [],
       createProviderConfig: (models) => ({ models }),
       getTransport: () => "provider",
       now: () => now,
@@ -105,6 +106,7 @@ describe("Command Code runtime", () => {
 
     const initialization = runtime.initialize()
     assert.deepEqual([...pi.commands.keys()], ["commandcode-refresh", "commandcode-status"])
+    await Promise.resolve()
     assert.equal(runtime.getStatus().refreshing, true)
     assert.equal(runtime.getStatus().lastAttempt, now)
 
@@ -142,6 +144,7 @@ describe("Command Code runtime", () => {
         if (!next) throw new Error("unexpected refresh")
         return next instanceof Promise ? next : next.promise
       },
+      loadCachedModels: async () => [],
       createProviderConfig: (models) => ({ models }),
       logWarning: (warning) => warnings.push(warning),
     })
@@ -189,6 +192,7 @@ describe("Command Code runtime", () => {
         if (!result) throw new Error("unexpected refresh")
         return result
       },
+      loadCachedModels: async () => [],
       createProviderConfig: (models) => ({ models }),
       logWarning: () => {},
     })
@@ -202,6 +206,123 @@ describe("Command Code runtime", () => {
     assert.equal(context.notifications.at(-1)?.type, "info")
     assert.match(context.notifications.at(-1)?.message ?? "", /2 models from live/)
     assert.deepEqual(pi.providers.at(-1)?.models, [FIRST_MODEL, SECOND_MODEL])
+  })
+
+  it("registers the cached catalog immediately and refreshes it in the background", async () => {
+    const pi = new ExtensionAPITestDouble()
+    const liveLoad = deferred<LoadCommandCodeModelsResult>()
+    let now = 1_700_000_000_000
+
+    const runtime = createCommandCodeRuntime(pi, {
+      endpoint: "https://api.commandcode.ai/provider/v1/models",
+      cachePath: "/tmp/commandcode-models.json",
+      loadModels: () => liveLoad.promise,
+      loadCachedModels: async () => [FIRST_MODEL],
+      createProviderConfig: (models) => ({ models }),
+      now: () => now,
+      logWarning: () => {},
+    })
+
+    await runtime.initialize()
+    assert.equal(pi.providers.length, 1)
+    assert.deepEqual(pi.providers[0]?.models, [FIRST_MODEL])
+    assert.equal(runtime.getStatus().source, "cache")
+    assert.equal(runtime.getStatus().modelCount, 1)
+    assert.equal(runtime.getStatus().refreshing, true)
+
+    now += 1_000
+    liveLoad.resolve(loaded([FIRST_MODEL, SECOND_MODEL]))
+    await runtime.refresh()
+    assert.equal(pi.providers.length, 2)
+    assert.deepEqual(pi.providers[1]?.models, [FIRST_MODEL, SECOND_MODEL])
+    assert.equal(runtime.getStatus().source, "live")
+    assert.equal(runtime.getStatus().modelCount, 2)
+    assert.equal(runtime.getStatus().refreshing, false)
+  })
+
+  it("keeps the cached catalog when the background refresh fails", async () => {
+    const pi = new ExtensionAPITestDouble()
+    const warnings: string[] = []
+
+    const runtime = createCommandCodeRuntime(pi, {
+      endpoint: "https://api.commandcode.ai/provider/v1/models",
+      cachePath: "/tmp/commandcode-models.json",
+      loadModels: async () => {
+        throw new Error("offline")
+      },
+      loadCachedModels: async () => [FIRST_MODEL],
+      createProviderConfig: (models) => ({ models }),
+      logWarning: (message) => warnings.push(message),
+    })
+
+    await runtime.initialize()
+    await runtime.refresh()
+    assert.equal(pi.providers.length, 1)
+    assert.deepEqual(pi.providers[0]?.models, [FIRST_MODEL])
+    assert.equal(runtime.getStatus().source, "cache")
+    assert.equal(runtime.getStatus().modelCount, 1)
+    assert.match(runtime.getStatus().warning ?? "", /offline/)
+    assert.equal(warnings.length, 1)
+  })
+
+  it("aborts the background refresh on dispose without reporting a warning", async () => {
+    const pi = new ExtensionAPITestDouble()
+    const warnings: string[] = []
+    let refreshSignal: AbortSignal | undefined
+
+    const runtime = createCommandCodeRuntime(pi, {
+      endpoint: "https://api.commandcode.ai/provider/v1/models",
+      cachePath: "/tmp/commandcode-models.json",
+      loadModels: (signal) =>
+        new Promise((_resolve, reject) => {
+          refreshSignal = signal
+          signal.addEventListener("abort", () => reject(signal.reason), { once: true })
+        }),
+      loadCachedModels: async () => [FIRST_MODEL],
+      createProviderConfig: (models) => ({ models }),
+      logWarning: (message) => warnings.push(message),
+    })
+
+    await runtime.initialize()
+    const pending = runtime.refresh()
+    assert.equal(refreshSignal?.aborted, false)
+
+    runtime.dispose()
+    const result = await pending
+    assert.equal(refreshSignal?.aborted, true)
+    assert.equal(result.refreshed, false)
+    assert.equal(runtime.getStatus().refreshing, false)
+    assert.equal(runtime.getStatus().warning, undefined)
+    assert.deepEqual(warnings, [])
+    assert.deepEqual(pi.providers[0]?.models, [FIRST_MODEL])
+  })
+
+  it("awaits the live catalog when no cache exists", async () => {
+    const pi = new ExtensionAPITestDouble()
+    const liveLoad = deferred<LoadCommandCodeModelsResult>()
+
+    const runtime = createCommandCodeRuntime(pi, {
+      endpoint: "https://api.commandcode.ai/provider/v1/models",
+      cachePath: "/tmp/commandcode-models.json",
+      loadModels: () => liveLoad.promise,
+      loadCachedModels: async () => [],
+      createProviderConfig: (models) => ({ models }),
+      logWarning: () => {},
+    })
+
+    let initialized = false
+    const initialization = runtime.initialize().then(() => {
+      initialized = true
+    })
+    await Promise.resolve()
+    assert.equal(pi.providers.length, 0)
+    assert.equal(initialized, false)
+
+    liveLoad.resolve(loaded([FIRST_MODEL]))
+    await initialization
+    assert.equal(initialized, true)
+    assert.deepEqual(pi.providers[0]?.models, [FIRST_MODEL])
+    assert.equal(runtime.getStatus().source, "live")
   })
 
   it("installs a cached catalog after an initially empty start", async () => {
@@ -221,6 +342,7 @@ describe("Command Code runtime", () => {
         if (!result) throw new Error("unexpected refresh")
         return result
       },
+      loadCachedModels: async () => [],
       createProviderConfig: (models) => ({ models }),
       logWarning: () => {},
     })
@@ -254,6 +376,7 @@ describe("Command Code runtime", () => {
         if (!result) throw new Error("unexpected refresh")
         return result
       },
+      loadCachedModels: async () => [],
       createProviderConfig: (models) => ({ models }),
       logWarning: () => {},
     })
@@ -280,6 +403,7 @@ describe("Command Code runtime", () => {
       loadModels: async () => {
         throw new Error("offline; api_key=user_initial_secret")
       },
+      loadCachedModels: async () => [],
       createProviderConfig: (models) => ({ models }),
       logWarning: () => {},
     })

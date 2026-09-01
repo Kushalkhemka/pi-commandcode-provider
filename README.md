@@ -31,6 +31,10 @@ omp plugin install pi-commandcode-provider
 
 Restart OMP or run `/reload`, then use `/login` and select **Use a subscription** followed by **Command Code**.
 
+## Other extensions
+
+Command Code models are registered under the custom `commandcode-custom` API. The provider also registers that API in the `@earendil-works/pi-ai/compat` registry, so sibling extensions that stream through `streamSimple` from that entrypoint with the active session model (background agents, memory workers, and similar) reach the same Command Code transport instead of failing with `No API provider registered for api: commandcode-custom`. When such a call passes no API key, the provider uses the configured Command Code credentials.
+
 ## Authentication
 
 ### Login dialog
@@ -84,7 +88,7 @@ Open `/model` and select one of the models provided by Command Code. Model avail
 
 ### Reasoning support
 
-Reasoning capability and selectable effort levels follow the official CLI catalog independently. Models can therefore be marked as reasoning-capable even when Command Code chooses their depth automatically. Models with explicit effort support also register a model-specific `thinkingLevelMap`, so pi and OMP expose only valid levels. Pi's native OpenAI- and Anthropic-compatible providers translate the selected level for Provider API accounts; the existing Command Code generate transport sends the matching `reasoning_effort` for Go accounts.
+Reasoning capability and selectable effort levels follow the official CLI catalog independently. Models can therefore be marked as reasoning-capable even when Command Code chooses their depth automatically. Models with explicit effort support register a model-specific `thinkingLevelMap`, so pi and OMP expose only valid levels. For a few reasoning models the CLI catalog ships no effort levels although the endpoint accepts `reasoning_effort`; `src/commandcode-catalog-overrides.ts` adds a manual level set for those (currently `meta/muse-spark-1.1`, `meta/muse-spark-1.2`, and `meta/muse-spark-1.2-contributor`) on top of the generated catalog, and the tests fail once upstream publishes its own levels so the override gets removed. Pi's native OpenAI- and Anthropic-compatible providers translate the selected level for Provider API accounts; the existing Command Code generate transport sends the matching `reasoning_effort` for Go accounts.
 
 List Command Code models from the terminal:
 
@@ -114,7 +118,7 @@ https://api.commandcode.ai/provider/v1/models
 
 The last successful catalog is cached at `<agent-dir>/commandcode-models.json`. For pi this is `~/.pi/agent/commandcode-models.json` by default. Compatible hosts such as OMP use their own agent directory.
 
-If the endpoint is temporarily unavailable, the provider uses the cached catalog. On a first offline start without a cache, pi still loads, but Command Code models remain unavailable until the connection is restored and `/commandcode-refresh` succeeds.
+When a valid cache exists, the provider registers the cached catalog immediately and refreshes it from the endpoint in the background, so startup does not wait for the network. The refreshed catalog replaces the cached one as soon as it arrives; `/commandcode-status` reports `source: cache` until then. If the endpoint is temporarily unavailable, the cached catalog stays active. On a first start without a cache, the provider waits for the live catalog; if that fails offline, pi still loads, but Command Code models remain unavailable until the connection is restored and `/commandcode-refresh` succeeds.
 
 While pi is running, use these provider commands without restarting:
 
@@ -135,7 +139,7 @@ The following environment variables are intended for tests, local mocks, and com
 
 ## Image input
 
-The provider advertises image input only for models marked with the `image` input modality in the official Command Code CLI model catalog. The capability snapshot currently follows `command-code@1.32.2`; unknown models default to text-only until their upstream metadata is reviewed. A daily GitHub Actions job synchronizes the CLI version, image capabilities, reasoning flags, reasoning efforts, and model-specific output limits with the latest published CLI package and opens or updates a reviewable pull request when they change. Pricing remains manually reviewed because temporary promotions and long-context tiers require explicit review.
+The provider advertises image input only for models marked with the `image` input modality in the official Command Code CLI model catalog. The capability snapshot currently follows `command-code@1.40.1`; unknown models default to text-only until their upstream metadata is reviewed. A daily GitHub Actions job synchronizes the CLI version, image capabilities, reasoning flags, reasoning efforts, and model-specific output limits with the latest published CLI package and opens or updates a reviewable pull request when they change. Pricing remains manually reviewed because temporary promotions and long-context tiers require explicit review.
 
 For vision-capable models, Pi's native provider adapters forward image blocks from user messages and tool results using the documented OpenAI or Anthropic message schema. Unknown and text-only models remain marked text-only in Pi.
 
@@ -205,7 +209,7 @@ COMMANDCODE_E2E_GOAT_API_KEY_FILE=/path/to/goat-key \
 
 Each profile runs with an isolated Pi agent directory and asserts transport selection, reasoning across turns, quota plan identity, abort handling, tool calls, and the packed npm artifact. Go must select `generate` and reject unsupported images; GOAT must select `provider` and complete a live vision request. The profile-specific `*_API_KEY` environment variables are also supported for CI secrets, but key files are preferred for local use.
 
-The Go profile defaults to DeepSeek V4 Flash; GOAT defaults to Grok 4.6 because its Provider API stream exposes reasoning consistently across consecutive turns. Override them with `COMMANDCODE_E2E_GO_MODEL`, `COMMANDCODE_E2E_GOAT_MODEL`, or `COMMANDCODE_E2E_PROVIDER_MODEL`. A successful live Anthropic `/provider/v1/messages` test requires a paid account whose plan includes the selected Claude model.
+The Go profile defaults to DeepSeek V4 Flash; GOAT defaults to Grok 4.6 because its Provider API stream exposes reasoning consistently across consecutive turns. Override them with `COMMANDCODE_E2E_GO_MODEL`, `COMMANDCODE_E2E_GOAT_MODEL`, or `COMMANDCODE_E2E_PROVIDER_MODEL`. The GOAT vision phase defaults to GPT-5.6 Luna and can be overridden with `COMMANDCODE_E2E_GOAT_VISION_MODEL`. A successful live Anthropic `/provider/v1/messages` test requires a paid account whose plan includes the selected Claude model.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup and tests. See [RELEASE.md](RELEASE.md) for the release process.
 
