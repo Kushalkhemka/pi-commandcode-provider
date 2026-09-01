@@ -20,7 +20,7 @@ export interface TemporaryPricing {
 }
 
 export const PRICING_SOURCE_URL = "https://commandcode.ai/docs/resources/pricing-limits"
-export const PRICING_LAST_VERIFIED = "2026-08-28"
+export const PRICING_LAST_VERIFIED = "2026-09-01"
 
 export const ZERO_MODEL_COST: CommandCodeModelCost = {
   input: 0,
@@ -40,8 +40,6 @@ export const ZERO_MODEL_COST: CommandCodeModelCost = {
 export const MODEL_COSTS: Readonly<Record<string, CommandCodeModelCost>> = {
   // Free models
   "poolside/laguna-s-2.1-free": { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-  "minimax/minimax-m3-free": { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-  "minimax/minimax-m2.7-free": { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
 
   // Open and open-weight models
   "tencent/hy3-paid": { input: 0.14, output: 0.58, cacheRead: 0.035, cacheWrite: 0 },
@@ -83,6 +81,12 @@ export const MODEL_COSTS: Readonly<Record<string, CommandCodeModelCost>> = {
     input: 0.22,
     output: 0.66,
     cacheRead: 0.007,
+    cacheWrite: 0,
+  },
+  "deepseek/deepseek-v4-flash-fast": {
+    input: 0.28,
+    output: 0.56,
+    cacheRead: 0.07,
     cacheWrite: 0,
   },
   "Qwen/Qwen3.8-Max": { input: 2, output: 6, cacheRead: 0.25, cacheWrite: 2.5 },
@@ -162,9 +166,9 @@ export const MODEL_COSTS: Readonly<Record<string, CommandCodeModelCost>> = {
   },
 
   // Anthropic
-  // Introductory pricing through 2026-08-31.
   "claude-sonnet-5": { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
   "claude-sonnet-4-6": { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
+  "claude-fable-5-1": { input: 10, output: 50, cacheRead: 0.25, cacheWrite: 12.5 },
   "claude-fable-5": { input: 10, output: 50, cacheRead: 1, cacheWrite: 12.5 },
   "claude-opus-5": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
   "claude-opus-4-8": { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
@@ -187,10 +191,10 @@ export const MODEL_COSTS: Readonly<Record<string, CommandCodeModelCost>> = {
 
   // Google and xAI
   "google/gemini-3.7-flash": {
-    input: 0.75,
-    output: 3.75,
-    cacheRead: 0.075,
-    cacheWrite: 0.04167,
+    input: 1.5,
+    output: 7.5,
+    cacheRead: 0.15,
+    cacheWrite: 0.08334,
   },
   "google/gemini-3.6-flash": { input: 1.5, output: 7.5, cacheRead: 0.15, cacheWrite: 0 },
   "google/gemini-3.5-flash": { input: 1.5, output: 9, cacheRead: 0.15, cacheWrite: 0 },
@@ -224,20 +228,4 @@ export const MODEL_COSTS: Readonly<Record<string, CommandCodeModelCost>> = {
   },
 }
 
-export const TEMPORARY_PRICING: readonly TemporaryPricing[] = [
-  {
-    models: ["claude-sonnet-5"],
-    expiresOn: "2026-08-31",
-    description: "introductory pricing",
-  },
-  {
-    models: ["google/gemini-3.7-flash"],
-    expiresOn: "2026-12-31",
-    description: "50% promotional pricing",
-  },
-  {
-    models: ["minimax/minimax-m3-free", "minimax/minimax-m2.7-free"],
-    expiresOn: "2026-09-05",
-    description: "free promotional pricing",
-  },
-]
+export const TEMPORARY_PRICING: readonly TemporaryPricing[] = []

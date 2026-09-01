@@ -27,11 +27,7 @@ const fixtureUrl = new URL("./fixtures/commandcode-model-ids.json", import.meta.
 const fixture = JSON.parse(await readFile(fixtureUrl, "utf-8")) as ModelCatalogSnapshot
 const pricingFixtureUrl = new URL("./fixtures/commandcode-pricing.json", import.meta.url)
 const pricingFixture = JSON.parse(await readFile(pricingFixtureUrl, "utf-8")) as PricingSnapshot
-const freeModels = new Set([
-  "poolside/laguna-s-2.1-free",
-  "minimax/minimax-m3-free",
-  "minimax/minimax-m2.7-free",
-])
+const freeModels = new Set(["poolside/laguna-s-2.1-free"])
 
 function assertCost(
   modelId: string,
@@ -54,7 +50,7 @@ function assertCost(
 describe("MODEL_COSTS pricing overlay", () => {
   it("covers the current Command Code model catalog snapshot", () => {
     assert.equal(fixture.source, "https://api.commandcode.ai/provider/v1/models")
-    assert.match(fixture.fetchedAt, /^2026-08-28T/)
+    assert.match(fixture.fetchedAt, /^2026-09-01T/)
 
     const catalogIds = [...fixture.modelIds].sort()
     const pricedIds = Object.keys(MODEL_COSTS).sort()
@@ -167,10 +163,22 @@ describe("MODEL_COSTS pricing overlay", () => {
       cacheWrite: 0,
     })
     assertCost("google/gemini-3.7-flash", {
-      input: 0.75,
-      output: 3.75,
-      cacheRead: 0.075,
-      cacheWrite: 0.04167,
+      input: 1.5,
+      output: 7.5,
+      cacheRead: 0.15,
+      cacheWrite: 0.08334,
+    })
+    assertCost("claude-fable-5-1", {
+      input: 10,
+      output: 50,
+      cacheRead: 0.25,
+      cacheWrite: 12.5,
+    })
+    assertCost("deepseek/deepseek-v4-flash-fast", {
+      input: 0.28,
+      output: 0.56,
+      cacheRead: 0.07,
+      cacheWrite: 0,
     })
     assertCost("meta/muse-spark-1.2-contributor", {
       input: 0.1,
@@ -218,7 +226,7 @@ describe("MODEL_COSTS pricing overlay", () => {
 
   it("tracks pricing provenance", () => {
     assert.equal(PRICING_SOURCE_URL, "https://commandcode.ai/docs/resources/pricing-limits")
-    assert.equal(PRICING_LAST_VERIFIED, "2026-08-28")
+    assert.equal(PRICING_LAST_VERIFIED, "2026-09-01")
   })
 
   it("fails once temporary pricing needs review", () => {

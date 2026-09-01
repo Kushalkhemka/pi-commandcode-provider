@@ -4,8 +4,8 @@
 
 - Stop silently dropping `role: "developer"` messages (for example OMP advisor steering notes, reminders, and nudges). `/alpha/generate` only accepts `user`, `assistant`, and `tool` roles, so developer messages are now forwarded as `user` messages with identical content in the same chronological position instead of disappearing from the request.
 - Add `Qwen/Qwen3.8-Flash` and `z-ai/glm-5.3-flash` with their verified reasoning efforts (`low, medium, xhigh` and `low, high, max`) and display pricing.
-- Refresh static model capabilities from `command-code@1.36.0`, adding the free `minimax/minimax-m3-free` model and the `z-ai/glm-5.3-flash` output limit while dropping the retired `stealth/ox-alpha`.
-- Refresh display pricing for the current 62-model catalog, adding the free `minimax/minimax-m3-free` and `minimax/minimax-m2.7-free` promotional variants (free through September 5, 2026) and `tencent/hy4-preview`, and removing the retired `stealth/ox-alpha`.
+- Refresh static model capabilities from `command-code@1.40.1`, adding `claude-fable-5-1`, `deepseek/deepseek-v4-flash-fast`, and `tencent/hy4-preview` with their reasoning efforts, adding `moonshotai/Kimi-K3` efforts and the `z-ai/glm-5.3-flash` output limit, and dropping the retired `stealth/ox-alpha` and `minimax/minimax-m3-free`.
+- Refresh display pricing for the current 62-model catalog, adding `claude-fable-5-1`, `deepseek/deepseek-v4-flash-fast`, and `tencent/hy4-preview`, removing the retired `stealth/ox-alpha`, `minimax/minimax-m3-free`, and `minimax/minimax-m2.7-free`, and ending the expired Claude Sonnet 5 introductory and Gemini 3.7 Flash promotional windows.
 - Fix `npm run sync:commandcode-catalog` and `npm run check:commandcode-catalog` on Windows by spawning npm through the shell.
 - Add a `refresh-model-catalog` agent skill with cross-platform helper scripts that snapshot the live model catalog and regenerate the pricing fixture from `MODEL_COSTS`.
 
