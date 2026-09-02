@@ -17,6 +17,7 @@ import {
 import { join } from "node:path"
 
 import { getConfiguredApiKey } from "./src/api-key.ts"
+import { pickCommandCodeApiKey, withResolvedCommandCodeApiKey } from "./src/converters.ts"
 import { createStreamCommandCode } from "./src/core.ts"
 import { calculateCommandCodeCost } from "./src/cost.ts"
 import {
@@ -54,10 +55,40 @@ type CompatStreamFunction = (
  * and registers custom APIs itself inside `registerProvider`. Resolve the
  * function at runtime so the extension loads on both hosts.
  */
-function registerCompatApiProvider(stream: CompatStreamFunction): void {
+function compatApiProviderRegistrar(): ((...args: unknown[]) => unknown) | undefined {
   const register = (piAiCompat as { registerApiProvider?: unknown }).registerApiProvider
-  if (typeof register !== "function") return
-  register({ api: COMMAND_CODE_API, stream, streamSimple: stream }, COMPAT_SOURCE_ID)
+  return typeof register === "function" ? (register as (...args: unknown[]) => unknown) : undefined
+}
+
+function registerCompatApiProvider(stream: CompatStreamFunction): void {
+  compatApiProviderRegistrar()?.(
+    { api: COMMAND_CODE_API, stream, streamSimple: stream },
+    COMPAT_SOURCE_ID,
+  )
+}
+
+/**
+ * The `apiKey` handed to `registerProvider` means different things per host.
+ *
+ * pi parses `$COMMAND_CODE_API_KEY` as an env template: unresolved means
+ * "not configured", so `/login` credentials and `--api-key` take over, and
+ * the entry keeps the API-key auth method registered next to OAuth. Without
+ * it pi composes an OAuth-only provider and drops stored `api_key`
+ * credentials and `--api-key`.
+ *
+ * Oh My Pi has no template notion: an unresolved value stays a literal config
+ * override that shadows its `/login` credential store and is sent verbatim as
+ * `Authorization: Bearer $COMMAND_CODE_API_KEY`. There, omit `apiKey` unless
+ * a real key is configured; OMP then reads env keys and stored credentials
+ * itself.
+ *
+ * Hosts are told apart by the same `registerApiProvider` probe used for the
+ * compat registry: pi exports it, OMP does not.
+ */
+function providerApiKey(): string | undefined {
+  const configured = pickCommandCodeApiKey(getConfiguredApiKey(), undefined)
+  if (configured) return configured
+  return compatApiProviderRegistrar() ? "$COMMAND_CODE_API_KEY" : undefined
 }
 
 function commandCodeHeaders(): Record<string, string> | undefined {
@@ -76,7 +107,7 @@ function createProviderConfig(
   return {
     name: "Command Code",
     baseUrl: apiBase,
-    apiKey: getConfiguredApiKey() ?? "$COMMAND_CODE_API_KEY",
+    apiKey: providerApiKey(),
     api: COMMAND_CODE_API,
     streamSimple: streamCommandCode,
     headers,
@@ -132,15 +163,18 @@ export default async function (pi: ExtensionAPI) {
     calculateCost: calculateCommandCodeCost,
     apiBase: legacyApiBase(apiBase),
   })
+  const resolveStreamOptions = (options?: Parameters<typeof streamNativeProvider>[2]) =>
+    withResolvedCommandCodeApiKey(options, getConfiguredApiKey())
   const transport = createCommandCodeTransportRouter({
     createStream: () => new AssistantMessageEventStream(),
     streamProvider: (model, context, options) =>
       streamNativeProvider(
         { ...model, api: apiForModelId(model.id), compat: model.compatConfig ?? model.compat },
         context,
-        options,
+        resolveStreamOptions(options),
       ),
-    streamGenerate,
+    streamGenerate: (model, context, options) =>
+      streamGenerate(model, context, resolveStreamOptions(options)),
   })
 
   // pi dispatches the main chat through the registered provider, but sibling
@@ -149,13 +183,9 @@ export default async function (pi: ExtensionAPI) {
   // api-registry, which knows nothing about extension providers. Register the
   // custom api there so those calls reach the same transport. The registry
   // resolves no credentials for extension providers, so fall back to the
-  // configured key when the caller passes none.
+  // configured key when the caller passes none or a placeholder.
   const compatStream: CompatStreamFunction = (model, context, options) =>
-    transport.stream(
-      model,
-      context,
-      options?.apiKey ? options : { ...options, apiKey: getConfiguredApiKey() },
-    ) as AssistantMessageEventStream
+    transport.stream(model, context, resolveStreamOptions(options)) as AssistantMessageEventStream
   registerCompatApiProvider(compatStream)
 
   pi.on("message_end", async (event, ctx) => {

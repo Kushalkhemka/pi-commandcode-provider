@@ -44,12 +44,20 @@ function findPiBinary() {
 
 const PI_BIN = findPiBinary()
 if (!PI_BIN) {
+  if (process.env.PI_LOCAL_REQUIRED === "1") {
+    console.error("[pi-local] FAIL - pi is required but not on PATH and PI_BIN is unset")
+    process.exit(1)
+  }
   console.log("[pi-local] SKIP — pi is not on PATH")
   process.exit(0)
 }
 
 const piCheck = spawnSync(PI_BIN, ["--help"], { stdio: "ignore" })
 if (piCheck.error) {
+  if (process.env.PI_LOCAL_REQUIRED === "1") {
+    console.error(`[pi-local] FAIL - pi failed to start: ${piCheck.error.message}`)
+    process.exit(1)
+  }
   console.log(`[pi-local] SKIP — pi failed to start: ${piCheck.error.message}`)
   process.exit(0)
 }
@@ -226,11 +234,19 @@ const env = {
   COMMANDCODE_MODELS_URL: `${apiBase}/provider/v1/models`,
 }
 
-function runPi(args, timeoutMs = 30_000) {
+function runPi(args, timeoutOrOptions = 30_000) {
+  const options =
+    typeof timeoutOrOptions === "number" ? { timeoutMs: timeoutOrOptions } : timeoutOrOptions
+  const timeoutMs = options.timeoutMs ?? 30_000
+  const childEnv = { ...env }
+  for (const [key, value] of Object.entries(options.env ?? {})) {
+    if (value === undefined) delete childEnv[key]
+    else childEnv[key] = value
+  }
   return new Promise((resolve) => {
     const child = spawn(PI_BIN, args, {
       cwd: PROJECT_DIR,
-      env,
+      env: childEnv,
       stdio: ["ignore", "pipe", "pipe"],
     })
     let stdout = ""
@@ -421,9 +437,9 @@ async function runRpcExtensionCommands(timeoutMs = 30_000) {
     stderr += chunk.toString("utf-8")
   })
 
-  const waitFor = (predicate) =>
+  const waitFor = (predicate, fromIndex = 0) =>
     new Promise((resolve, reject) => {
-      const existing = events.find(predicate)
+      const existing = events.slice(fromIndex).find(predicate)
       if (existing) {
         resolve(existing)
         return
@@ -445,17 +461,27 @@ async function runRpcExtensionCommands(timeoutMs = 30_000) {
     )
     const commandNames = commandsResponse.data?.commands?.map((command) => command.name) ?? []
 
-    send({ id: "status-before", type: "prompt", message: "/commandcode-status" })
-    await waitFor(
-      (event) => event.type === "response" && event.id === "status-before" && event.success,
-    )
-    const statusBefore = await waitFor(
-      (event) =>
-        event.type === "extension_ui_request" &&
-        event.method === "notify" &&
-        typeof event.message === "string" &&
-        event.message.includes("model count: 3"),
-    )
+    // The cached catalog registers immediately and refreshes in the
+    // background. `/commandcode-refresh` coalesces with an in-flight refresh,
+    // so the status must report the startup refresh as finished before the
+    // catalog is changed; otherwise the command reports the old catalog.
+    let statusBefore
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const id = `status-before-${attempt}`
+      const fromIndex = events.length
+      send({ id, type: "prompt", message: "/commandcode-status" })
+      await waitFor((event) => event.type === "response" && event.id === id && event.success)
+      statusBefore = await waitFor(
+        (event) =>
+          event.type === "extension_ui_request" &&
+          event.method === "notify" &&
+          typeof event.message === "string" &&
+          event.message.includes("model count: 3"),
+        fromIndex,
+      )
+      if (/source: live[\s\S]*refresh: idle/.test(statusBefore.message)) break
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
 
     includeRefreshedModel = true
     send({ id: "refresh", type: "prompt", message: "/commandcode-refresh" })
@@ -713,7 +739,11 @@ try {
   const offlineListOutput = offlineList.stdout || offlineList.stderr
   assert.match(offlineListOutput, /gpt-5\.4/)
   assert.match(offlineListOutput, /cc-second-model/)
-  assert.match(offlineList.stderr, /Using the cached catalog/)
+  // The cached catalog is registered before the background refresh fails, and
+  // `--list-models` exits as soon as the list is printed. Whether the refresh
+  // warning reaches stderr first depends on the host runtime (Bun flushes it,
+  // Node does not), so the warning is asserted on the print run below, which
+  // waits for the response.
 
   console.log("[pi-local] use a cached model while model discovery is offline")
   requestCount = 0
@@ -823,6 +853,75 @@ try {
     editTool?.function?.parameters?.properties?.edits?.items?.properties?.oldText?.type,
     "string",
   )
+
+  // pi resolves `/login` credentials, `--api-key`, and env keys through the
+  // provider's registered auth methods. Stored credentials and `--api-key`
+  // only reach the request when the provider keeps an API-key auth method
+  // next to OAuth, so every credential source is checked without an env key.
+  const authArgs = [
+    "--no-extensions",
+    "-e",
+    EXT_PATH,
+    "-p",
+    "say mock token",
+    "--provider",
+    "commandcode",
+    "--model",
+    TEST_MODEL,
+  ]
+  const noEnvKey = { COMMAND_CODE_API_KEY: undefined, COMMANDCODE_API_KEY: undefined }
+  const authPath = join(agentDir, "auth.json")
+
+  console.log("[pi-local] stored /login OAuth credential is used when no env key exists")
+  writeFileSync(
+    authPath,
+    JSON.stringify({
+      commandcode: {
+        type: "oauth",
+        access: "stored-oauth-token",
+        refresh: "stored-oauth-token",
+        expires: Date.now() + 24 * 60 * 60 * 1000,
+      },
+    }),
+  )
+  requestCount = 0
+  lastRequestHeaders = {}
+  const oauthPrint = await runPi(authArgs, { env: noEnvKey })
+  assert.equal(oauthPrint.code, 0, oauthPrint.stderr)
+  assert.match(oauthPrint.stdout, /mock-pi-ok/)
+  assert.equal(requestCount, 1)
+  assert.equal(lastRequestHeaders.authorization, "Bearer stored-oauth-token")
+
+  console.log("[pi-local] stored /login API key credential is used when no env key exists")
+  writeFileSync(
+    authPath,
+    JSON.stringify({ commandcode: { type: "api_key", key: "stored-api-key" } }),
+  )
+  requestCount = 0
+  lastRequestHeaders = {}
+  const apiKeyPrint = await runPi(authArgs, { env: noEnvKey })
+  assert.equal(apiKeyPrint.code, 0, apiKeyPrint.stderr)
+  assert.match(apiKeyPrint.stdout, /mock-pi-ok/)
+  assert.equal(requestCount, 1)
+  assert.equal(lastRequestHeaders.authorization, "Bearer stored-api-key")
+
+  console.log("[pi-local] --api-key is used when no env key or stored credential exists")
+  rmSync(authPath, { force: true })
+  requestCount = 0
+  lastRequestHeaders = {}
+  const cliKeyPrint = await runPi([...authArgs, "--api-key", "cli-key"], { env: noEnvKey })
+  assert.equal(cliKeyPrint.code, 0, cliKeyPrint.stderr)
+  assert.match(cliKeyPrint.stdout, /mock-pi-ok/)
+  assert.equal(requestCount, 1)
+  assert.equal(lastRequestHeaders.authorization, "Bearer cli-key")
+
+  console.log("[pi-local] no credential at all never sends the placeholder")
+  requestCount = 0
+  lastRequestHeaders = {}
+  const noKeyPrint = await runPi(authArgs, { env: noEnvKey })
+  assert.notEqual(noKeyPrint.code, 0)
+  assert.equal(requestCount, 0, JSON.stringify(lastRequestHeaders))
+  assert.doesNotMatch(noKeyPrint.stdout + noKeyPrint.stderr, /\$COMMAND_CODE_API_KEY/)
 
   console.log("[pi-local] Claude request through Anthropic Messages endpoint")
   requestCount = 0

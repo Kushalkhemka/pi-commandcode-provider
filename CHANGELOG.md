@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Fix Oh My Pi chat returning `401 Invalid 'Authorization' header` after `/login`: OMP kept the unresolved `$COMMAND_CODE_API_KEY` placeholder as a literal config API key that shadowed its stored credentials and was sent as the Bearer token. The placeholder is now registered only on pi, where it keeps the API-key login method and `--api-key` working next to OAuth; on OMP the provider omits `apiKey` unless a real key is configured. Placeholders passed by the host are also resolved or stripped on the Provider API and compat stream paths, matching the generate transport and `/commandcode-quota`.
+- Cover stored `/login` OAuth and API-key credentials, `--api-key`, and env keys end to end on both pi and Oh My Pi, asserting the exact Bearer token the mock API receives.
+
 ## 0.6.2 - 2026-09-02
 
 - Fix `omp plugin install` on Oh My Pi 18.x, which rejected 0.6.1 because its pi-ai lacks the `registerApiProvider` export; the compat registration now resolves at runtime and is skipped on hosts that register custom APIs themselves.
