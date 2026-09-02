@@ -40,6 +40,10 @@ function findOmpBinary() {
 
 const OMP_BIN = findOmpBinary()
 if (!OMP_BIN) {
+  if (process.env.OMP_COMPAT_REQUIRED === "1") {
+    console.error("[omp-compat] FAIL - omp is required but not on PATH and OMP_BIN is unset")
+    process.exit(1)
+  }
   console.log("[omp-compat] SKIP - omp is not on PATH")
   process.exit(0)
 }
@@ -211,6 +215,20 @@ function runOmp(args, timeoutMs = 30_000) {
 }
 
 try {
+  console.log("[omp-compat] extension loads against the host's pi packages")
+  // OMP remaps `@earendil-works/pi-ai/compat` onto its own pi-ai and rejects
+  // any named import that module does not export, both in `omp plugin
+  // install` validation and when loading the extension. 0.6.1 shipped such an
+  // import and could not be installed on omp 18 (#74). `omp models -e EXT`
+  // runs the same loader, so it reproduces that failure without a registry.
+  const load = await runOmp(["models", "-e", EXT_PATH])
+  assert.equal(load.code, 0, load.stderr)
+  assert.doesNotMatch(
+    load.stdout + load.stderr,
+    /Failed to load extension|not found in module/,
+    "the extension must only import what OMP's bundled pi packages export",
+  )
+
   console.log("[omp-compat] list models through real extension")
   modelListRequestCount = 0
   // Prefer the flag form `omp -e EXT --list-models`; Homebrew's `omp`
