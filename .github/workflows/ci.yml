@@ -46,9 +46,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@v2.2.0
         with:
-          bun-version: latest
+          bun-version: 1.4.0
       - run: npm ci
       - name: Install Oh My Pi
         run: |
