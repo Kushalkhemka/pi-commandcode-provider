@@ -2,8 +2,15 @@
 
 ## Unreleased
 
+## 0.6.2 - 2026-09-02
+
 - Fix `omp plugin install` on Oh My Pi 18.x, which rejected 0.6.1 because its pi-ai lacks the `registerApiProvider` export; the compat registration now resolves at runtime and is skipped on hosts that register custom APIs themselves.
 - Run the Oh My Pi compatibility suite against a real `omp` binary in CI as a required check, and assert there that the extension loads against OMP's bundled pi packages.
+- Pin the CI memory benchmark and Oh My Pi jobs to Bun 1.4.0, Node 22.23.2, and pi 0.84.4.
+
+### Contributors
+
+- @AmeMizuki — reported the failing `omp plugin install` on Oh My Pi 18.1.2.
 
 ## 0.6.1 - 2026-09-01
 
