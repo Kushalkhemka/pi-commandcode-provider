@@ -2,8 +2,14 @@
 
 ## Unreleased
 
-- Fix Oh My Pi chat returning `401 Invalid 'Authorization' header` after `/login`: OMP kept the unresolved `$COMMAND_CODE_API_KEY` placeholder as a literal config API key that shadowed its stored credentials and was sent as the Bearer token. The placeholder is now registered only on pi, where it keeps the API-key login method and `--api-key` working next to OAuth; on OMP the provider omits `apiKey` unless a real key is configured. Placeholders passed by the host are also resolved or stripped on the Provider API and compat stream paths, matching the generate transport and `/commandcode-quota`.
-- Cover stored `/login` OAuth and API-key credentials, `--api-key`, and env keys end to end on both pi and Oh My Pi, asserting the exact Bearer token the mock API receives.
+## 0.6.3 - 2026-09-02
+
+- Fix Oh My Pi chat returning `401 Invalid 'Authorization' header` after `/login`: OMP kept the unresolved `$COMMAND_CODE_API_KEY` placeholder as a literal config API key that shadowed its stored credentials and was sent as the Bearer token. The placeholder is now registered only on pi, where it keeps the API-key login method and `--api-key` working next to OAuth; on OMP the provider omits `apiKey` unless a real key is configured. Placeholders passed by the host are also resolved or stripped on the Provider API and compat stream paths, and the legacy generate transport resolves its key through the same rule.
+- Cover stored `/login` OAuth and API-key credentials, `--api-key`, and env keys end to end on both pi and Oh My Pi, asserting the exact Bearer token the mock API receives. CI now runs the pi end-to-end suite against a real `pi` binary instead of skipping it.
+
+### Contributors
+
+- @ebreen — reported and diagnosed the Oh My Pi `/login` 401, and opened the fix that this release builds on (#78).
 
 ## 0.6.2 - 2026-09-02
 
