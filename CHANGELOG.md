@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Fix `omp plugin install` on Oh My Pi 18.x, which rejected 0.6.1 because its pi-ai lacks the `registerApiProvider` export; the compat registration now resolves at runtime and is skipped on hosts that register custom APIs themselves.
+- Run the Oh My Pi compatibility suite against a real `omp` binary in CI as a required check, and assert there that the extension loads against OMP's bundled pi packages.
+
 ## 0.6.1 - 2026-09-01
 
 - Expose selectable thinking levels (`minimal`, `low`, `medium`, `high`, `xhigh`) for `meta/muse-spark-1.1`, `meta/muse-spark-1.2`, and `meta/muse-spark-1.2-contributor` through a manual catalog override, so `/thinking` and `Shift+Tab` no longer stay locked on `off` for these reasoning models.

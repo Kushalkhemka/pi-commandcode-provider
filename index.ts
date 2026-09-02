@@ -6,11 +6,8 @@
  */
 
 import { AssistantMessageEventStream } from "@earendil-works/pi-ai"
-import {
-  registerApiProvider,
-  streamSimple as streamNativeProvider,
-  type ApiStreamSimpleFunction,
-} from "@earendil-works/pi-ai/compat"
+import * as piAiCompat from "@earendil-works/pi-ai/compat"
+import { streamSimple as streamNativeProvider } from "@earendil-works/pi-ai/compat"
 import {
   getAgentDir,
   type ExtensionAPI,
@@ -44,6 +41,24 @@ import { createCommandCodeTransportRouter } from "./src/transport.ts"
 
 const COMMAND_CODE_API = "commandcode-custom"
 const COMPAT_SOURCE_ID = "pi-commandcode-provider"
+
+type CompatStreamFunction = (
+  model: Parameters<typeof streamNativeProvider>[0],
+  context: Parameters<typeof streamNativeProvider>[1],
+  options?: Parameters<typeof streamNativeProvider>[2],
+) => AssistantMessageEventStream
+
+/**
+ * pi's compat entrypoint exposes `registerApiProvider`; Oh My Pi maps
+ * `@earendil-works/pi-ai/compat` onto its own pi-ai, which lacks that export
+ * and registers custom APIs itself inside `registerProvider`. Resolve the
+ * function at runtime so the extension loads on both hosts.
+ */
+function registerCompatApiProvider(stream: CompatStreamFunction): void {
+  const register = (piAiCompat as { registerApiProvider?: unknown }).registerApiProvider
+  if (typeof register !== "function") return
+  register({ api: COMMAND_CODE_API, stream, streamSimple: stream }, COMPAT_SOURCE_ID)
+}
 
 function commandCodeHeaders(): Record<string, string> | undefined {
   if (process.env.CMD_ZDR === "1" || process.env.COMMANDCODE_ZDR === "1") {
@@ -135,16 +150,13 @@ export default async function (pi: ExtensionAPI) {
   // custom api there so those calls reach the same transport. The registry
   // resolves no credentials for extension providers, so fall back to the
   // configured key when the caller passes none.
-  const compatStream: ApiStreamSimpleFunction = (model, context, options) =>
+  const compatStream: CompatStreamFunction = (model, context, options) =>
     transport.stream(
       model,
       context,
       options?.apiKey ? options : { ...options, apiKey: getConfiguredApiKey() },
     ) as AssistantMessageEventStream
-  registerApiProvider(
-    { api: COMMAND_CODE_API, stream: compatStream, streamSimple: compatStream },
-    COMPAT_SOURCE_ID,
-  )
+  registerCompatApiProvider(compatStream)
 
   pi.on("message_end", async (event, ctx) => {
     if (event.message.role !== "assistant") return

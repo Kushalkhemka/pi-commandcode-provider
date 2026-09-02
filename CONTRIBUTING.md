@@ -52,6 +52,17 @@ COMMANDCODE_E2E_PROVIDER_API_KEY_FILE=/path/to/provider-key npm run test:e2e:liv
 
 Use `npm run test:e2e:live:all` with the Go and GOAT file variables to run both subscription transports sequentially. Store keys in a secret manager and export each one to a new mode-`0600` temporary file for the test; never add key files to the repository. Direct `*_API_KEY` variables are intended primarily for protected CI secrets.
 
+### Oh My Pi compatibility
+
+`tests/test-omp-compat.mjs` runs the extension inside a real `omp` binary against a mock Command Code API. It skips locally when `omp` is not on `PATH`; CI installs Oh My Pi and runs it as a required check with `OMP_COMPAT_REQUIRED=1`, so a change that only loads on pi fails CI instead of the next `omp plugin install`.
+
+To run it locally, point `OMP_BIN` at an omp executable (Oh My Pi needs Bun ≥ 1.3.14):
+
+```sh
+npm install -g @oh-my-pi/pi-coding-agent
+OMP_BIN="$(npm prefix -g)/bin/omp" node tests/test-omp-compat.mjs
+```
+
 Before opening a PR, run:
 
 ```sh
