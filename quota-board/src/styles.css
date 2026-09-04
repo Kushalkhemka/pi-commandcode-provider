@@ -300,8 +300,10 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .coverage-meter { display: grid; gap: 16px; padding: 26px; }
 .coverage-meter strong { font: 500 38px "IBM Plex Mono"; }
 .coverage-meter p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.65; }
-.request-chart { height: 430px; }
-.request-chart > .recharts-responsive-container { height: 365px !important; padding: 12px; }
+.request-chart--trend { height: 430px; }
+.request-chart--trend > .recharts-responsive-container { height: 365px !important; padding: 12px; }
+.request-chart--summary { min-height: 0; }
+.request-chart--summary .token-composition { padding: 16px; }
 .settings-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 12px; }
 .endpoint-table { overflow-x: auto; }
 .endpoint-row { min-width: 650px; min-height: 54px; display: grid; grid-template-columns: 46px 190px minmax(160px, 1fr) 92px; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--line-soft); font-size: 9px; }
@@ -461,7 +463,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
   .metric-rail--three { grid-template-columns: 1fr; }
   .metric-rail--three .metric { border-right: 0; border-bottom: 1px solid var(--line); }
   .metric-rail--three .metric:last-child { border-bottom: 0; }
-  .request-chart { height: 360px; }
+  .request-chart--trend { height: 360px; }
   .mobile-add { width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border: 1px solid var(--accent); border-radius: 6px; color: var(--accent-ink); background: var(--accent); cursor: pointer; }
   .account-detail { width: 100vw; }
   .verification-card > div { grid-template-columns: 1fr; }

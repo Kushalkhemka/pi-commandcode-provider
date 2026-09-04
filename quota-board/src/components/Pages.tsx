@@ -64,6 +64,7 @@ export function ModelsPage({ data }: { data: DashboardData }) {
 }
 
 export function RequestsPage({ data }: { data: DashboardData }) {
+  const hasTrend = data.trend.length >= 2
   return (
     <>
       <section className="metric-rail metric-rail--three">
@@ -71,7 +72,10 @@ export function RequestsPage({ data }: { data: DashboardData }) {
         <Metric label="Success rate" value={data.totals.successRate === null ? "—" : `${(data.totals.successRate * 100).toFixed(1)}%`} detail="Across connected accounts" />
         <Metric label="Provider cost" value={`$${data.totals.totalCost.toFixed(2)}`} detail="Reported by CommandCode" />
       </section>
-      <section className="panel page-panel request-chart"><PanelHeading title="Input and output activity" caption="Changes between board refreshes" /><TokenFlowChart points={data.trend} totals={data.totals} /></section>
+      <section className={`panel page-panel request-chart ${hasTrend ? "request-chart--trend" : "request-chart--summary"}`}>
+        <PanelHeading title={hasTrend ? "Input and output activity" : "Token composition"} caption={hasTrend ? "Changes between board refreshes" : "Current billing-period totals"} />
+        <TokenFlowChart points={data.trend} totals={data.totals} />
+      </section>
     </>
   )
 }
