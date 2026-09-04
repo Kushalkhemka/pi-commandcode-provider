@@ -53,7 +53,7 @@ pi --list-models commandcode
 
 ### Requirements
 
-- Pi `0.84.4` or newer
+- Pi `0.84.4` or newer (tested with `0.84.4` and `0.85.0`)
 - Node.js 20 or newer when developing or running scripts directly
 - A CommandCode plan with Provider API access
 

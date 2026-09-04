@@ -125,10 +125,12 @@ const server = createServer((req, res) => {
   }
 
   const isOpenAIRequest = req.method === "POST" && req.url === "/provider/v1/chat/completions"
-  const isAnthropicRequest = req.method === "POST" && req.url === "/provider/v1/messages"
+  const isAnthropicRequest =
+    req.method === "POST" &&
+    (req.url === "/provider/v1/messages" || req.url?.startsWith("/provider/v1/messages?"))
   if (!isOpenAIRequest && !isAnthropicRequest) {
     res.writeHead(404)
-    res.end("Not found")
+    res.end(`Not found: ${req.method} ${req.url}`)
     return
   }
 

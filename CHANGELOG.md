@@ -14,6 +14,7 @@
 - Add reviewed pricing for Qwen 3.8 Max 0902, Gemini 3.8 Flash, LongCat 2.0 Free, Muse Spark 1.3, and Muse Spark 1.3 Contributor.
 - Add a live-catalog compatibility check that fails when a CommandCode model lacks an explicit pricing entry or reviewed fixture.
 - Expand unit and real-Pi integration coverage for prompt caching, catalog drift, transport policy, error envelopes, and continuation streaming.
+- Validate Anthropic Messages routes with the optional query parameters added by Pi 0.85.0 while retaining Pi 0.84.4 compatibility.
 
 ### Breaking changes
 

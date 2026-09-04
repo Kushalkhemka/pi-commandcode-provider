@@ -28,6 +28,9 @@ function modelIdsFromResponse(value: unknown): string[] {
   })
 }
 
+// This maintenance-only check sends no user data or credentials to the fixed,
+// documented public model endpoint.
+// nosemgrep: semgrep.pi-extension-data-exfiltration-fetch, semgrep.pi-extension-unexpected-fetch
 const response = await fetch(MODELS_URL, { signal: AbortSignal.timeout(10_000) })
 if (!response.ok) throw new Error(`Command Code model catalog returned HTTP ${response.status}`)
 
