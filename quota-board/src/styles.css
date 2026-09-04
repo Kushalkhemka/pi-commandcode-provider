@@ -217,6 +217,14 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .usage-metric .progress { margin-top: 2px; }
 .token-band { margin-top: 9px; padding: 14px 16px 13px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--surface-raised); }
 .token-band .token-composition { padding: 0; }
+.overview-token-lines { min-width: 0; }
+.overview-token-lines__legend { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.overview-token-lines__legend > span { min-width: 0; display: grid; grid-template-columns: 6px 1fr auto; align-items: center; gap: 6px; }
+.overview-token-lines__legend i { width: 6px; height: 6px; border-radius: 50%; }
+.overview-token-lines__legend small { overflow: hidden; color: var(--muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.overview-token-lines__legend strong { color: var(--ink-strong); font: 500 10px "IBM Plex Mono"; }
+.overview-token-lines__plot { height: 122px; margin-top: 7px; }
+.overview-token-lines > p { margin: 1px 0 0; color: var(--muted); font: 400 8px "IBM Plex Mono"; }
 .analytics-band { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 9px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--surface-raised); overflow: hidden; }
 .analytics-band > span { min-width: 0; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; padding: 14px 16px; border-right: 1px solid var(--line-soft); }
 .analytics-band > span:last-child { border-right: 0; }
@@ -281,6 +289,9 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .quota-cell strong { font: 500 10px "IBM Plex Mono"; }
 .quota-cell small { color: var(--muted); font: 400 10px "IBM Plex Mono"; }
 .quota-cell__label { display: none; }
+.quota-cell__label svg { flex: 0 0 auto; }
+.currency-value { display: inline-flex; align-items: baseline; gap: 1px; }
+.currency-value > span { color: var(--mint); }
 .status { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10px; text-transform: capitalize; }
 .status i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 .status--healthy { color: var(--mint); }
@@ -451,7 +462,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
   .account-row { position: relative; min-width: 0; min-height: 124px; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: center; gap: 12px 10px; padding: 13px 12px; }
   .account-name { grid-column: 1 / -1; padding-right: 94px; }
   .account-row > span:nth-child(2), .account-row > span:nth-child(6), .account-row > span:nth-child(7) { display: none; }
-  .quota-cell__label { display: block; margin-bottom: 1px; color: var(--muted); font: 400 10px "Instrument Sans"; text-transform: uppercase; letter-spacing: .04em; }
+  .quota-cell__label { display: flex; align-items: center; gap: 4px; margin-bottom: 1px; color: var(--muted); font: 400 10px "Instrument Sans"; text-transform: uppercase; letter-spacing: .04em; }
   .account-row > span:nth-child(8) { position: absolute; top: 22px; right: 38px; display: inline-flex; }
   .row-more { position: absolute; top: 21px; right: 12px; }
   .row-more svg:first-child { display: none; }

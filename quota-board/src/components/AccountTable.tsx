@@ -1,4 +1,4 @@
-import { ChevronDown, MoreHorizontal } from "lucide-react"
+import { ChevronDown, CircleDollarSign, MoreHorizontal } from "lucide-react"
 import type { AccountView } from "../types"
 import { Progress, toneFor } from "./Progress"
 
@@ -79,8 +79,8 @@ export function AccountTable({
             <QuotaCell label="5-hour" used={five?.used} cap={five?.cap} resetAt={five?.resetAt} />
             <QuotaCell label="Weekly" used={weekly?.used} cap={weekly?.cap} resetAt={weekly?.resetAt} />
             <span className="quota-cell quota-cell--monthly">
-              <small className="quota-cell__label">Monthly</small>
-              <strong>{account.snapshot ? `$${account.snapshot.monthlyRemaining.toFixed(2)}` : "—"}</strong>
+              <small className="quota-cell__label"><CircleDollarSign size={12} />Monthly</small>
+              <strong className="currency-value">{account.snapshot ? <><span>$</span>{account.snapshot.monthlyRemaining.toFixed(2)}</> : "—"}</strong>
               <Progress value={monthlyRate} tone={toneFor(monthlyRate)} />
             </span>
             <span>{account.snapshot ? compact(account.snapshot.totalTokens) : "—"}</span>

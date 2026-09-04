@@ -22,6 +22,60 @@ function compact(value: number): string {
   return String(value)
 }
 
+function tokenSeries(points: TrendPoint[], totals: DashboardData["totals"]) {
+  if (points.length >= 2) return { data: points, cumulative: false }
+  const cacheObserved = totals.cacheHitRate !== null
+  return {
+    cumulative: true,
+    data: [
+      { time: "Period start", input: 0, output: 0, cacheRead: cacheObserved ? 0 : null, cacheWrite: cacheObserved ? 0 : null },
+      { time: "Current", input: totals.inputTokens, output: totals.outputTokens, cacheRead: cacheObserved ? totals.cacheReadTokens : null, cacheWrite: cacheObserved ? totals.cacheWriteTokens : null },
+    ],
+  }
+}
+
+function timeLabel(value: string) {
+  if (value === "Period start" || value === "Current") return value
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value.slice(5)
+  return date.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+}
+
+export function OverviewTokenLines({ points, totals }: { points: TrendPoint[]; totals: DashboardData["totals"] }) {
+  const series = tokenSeries(points, totals)
+  const cacheObserved = totals.cacheHitRate !== null
+  const rows = [
+    { key: "input", label: "Input", value: totals.inputTokens, color: "var(--cyan)" },
+    { key: "output", label: "Output", value: totals.outputTokens, color: "var(--violet)" },
+    { key: "cacheRead", label: "Cache read", value: totals.cacheReadTokens, color: "var(--mint)", observed: cacheObserved },
+    { key: "cacheWrite", label: "Cache write", value: totals.cacheWriteTokens, color: "var(--amber)", observed: cacheObserved },
+  ]
+  return (
+    <div className="overview-token-lines" role="img" aria-label="Line chart of input, output, cache read, and cache write tokens">
+      <div className="overview-token-lines__legend">
+        {rows.map((row) => (
+          <span key={row.key}><i style={{ background: row.color }} /><small>{row.label}</small><strong>{row.observed === false ? "—" : compact(row.value)}</strong></span>
+        ))}
+      </div>
+      <div className="overview-token-lines__plot">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={series.data} margin={{ top: 8, right: 8, left: -22, bottom: 0 }}>
+            <CartesianGrid stroke="var(--line)" strokeDasharray="2 4" vertical={false} />
+            <XAxis dataKey="time" tickFormatter={timeLabel} stroke="var(--muted)" tickLine={false} axisLine={false} fontSize={9} minTickGap={28} />
+            <YAxis stroke="var(--muted)" tickLine={false} axisLine={false} fontSize={9} tickFormatter={compact} width={52} />
+            <Tooltip formatter={(value) => compact(Number(value))} labelFormatter={(value) => timeLabel(String(value))} contentStyle={{ background: "var(--surface-raised)", border: "1px solid var(--line)", borderRadius: 7, color: "var(--ink)" }} />
+            <Line type="monotone" dataKey="input" name="Input" stroke="var(--cyan)" strokeWidth={2} dot={series.cumulative ? { r: 2 } : false} activeDot={{ r: 3 }} />
+            <Line type="monotone" dataKey="output" name="Output" stroke="var(--violet)" strokeWidth={2} dot={series.cumulative ? { r: 2 } : false} activeDot={{ r: 3 }} />
+            {cacheObserved && <Line type="monotone" dataKey="cacheRead" name="Cache read" stroke="var(--mint)" strokeWidth={1.5} dot={false} strokeDasharray="5 4" />}
+            {cacheObserved && <Line type="monotone" dataKey="cacheWrite" name="Cache write" stroke="var(--amber)" strokeWidth={1.5} dot={false} strokeDasharray="3 4" />}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <p>{series.cumulative ? "Billing-period endpoints · observed history appears after additional refreshes" : "Observed changes between board refreshes"}</p>
+    </div>
+  )
+}
+
 export function TokenFlowChart({ points, totals }: { points: TrendPoint[]; totals?: DashboardData["totals"] }) {
   if (points.length < 2) {
     const input = totals?.inputTokens ?? 0

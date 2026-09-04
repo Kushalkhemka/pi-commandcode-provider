@@ -1,7 +1,7 @@
-import { Activity, AlertTriangle, CalendarClock, CheckCircle2, Coins, Database, Gauge, ShieldCheck } from "lucide-react"
+import { Activity, AlertTriangle, CalendarClock, CheckCircle2, CircleDollarSign, Database, Gauge, ShieldCheck } from "lucide-react"
 import type { AccountView, DashboardData } from "../types"
 import { AccountTable, compact } from "./AccountTable"
-import { ModelMix, TokenFlowChart } from "./Charts"
+import { ModelMix, OverviewTokenLines, TokenFlowChart } from "./Charts"
 import { Progress, toneFor } from "./Progress"
 
 export function OverviewPage({
@@ -23,13 +23,13 @@ export function OverviewPage({
           <small>5-hour resets {fiveHour.resetAt ? formatReset(fiveHour.resetAt) : "—"} · weekly {weekly.resetAt ? formatReset(weekly.resetAt) : "—"}</small>
         </header>
         <div className="usage-metrics">
-          <UsageMetric icon={Coins} label="Monthly credits left" value={`$${data.totals.monthlyRemaining.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} detail={data.totals.monthlyCap ? `${Math.round((data.totals.monthlyRemaining / data.totals.monthlyCap) * 100)}% of $${data.totals.monthlyCap.toLocaleString()}` : "No active billing cap"} />
+          <UsageMetric icon={CircleDollarSign} label="Monthly credits left" value={`$${data.totals.monthlyRemaining.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} detail={data.totals.monthlyCap ? `${Math.round((data.totals.monthlyRemaining / data.totals.monthlyCap) * 100)}% of $${data.totals.monthlyCap.toLocaleString()}` : "No active billing cap"} />
           <UsageMetric icon={Gauge} label="5-hour utilization" value={`${Math.round(fiveHour.value * 100)}%`} detail={`${fiveHour.used.toFixed(1)} of ${fiveHour.cap.toFixed(0)} credits`} progress={fiveHour.value} />
           <UsageMetric icon={CalendarClock} label="Weekly utilization" value={`${Math.round(weekly.value * 100)}%`} detail={`${weekly.used.toFixed(1)} of ${weekly.cap.toFixed(0)} credits`} progress={weekly.value} />
           <UsageMetric icon={Activity} label="Total tokens" value={compact(data.totals.totalTokens)} detail={`Input ${compact(data.totals.inputTokens)} · Output ${compact(data.totals.outputTokens)}`} />
         </div>
         <div className="token-band">
-          <TokenFlowChart points={data.trend} totals={data.totals} />
+          <OverviewTokenLines points={data.trend} totals={data.totals} />
         </div>
         <AnalyticsBand data={data} />
       </section>
