@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add CommandCode Quota Board, a local-first multi-account dashboard for rolling quotas, account identity, aggregate usage, model mix, and cache efficiency, with encrypted key storage and automatic opt-in telemetry from Pi.
+
 ## 1.0.0 - 2026-09-04
 
 - Publish the maintained fork as `@kushalkhemka/pi-commandcode-provider` with Pi-first documentation, package metadata, and release verification.

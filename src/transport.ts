@@ -22,6 +22,7 @@ interface TransportDependencies {
     context: ContextLike,
     options?: StreamOptions,
   ) => AssistantMessageEventStreamLike
+  observeEvent?: (event: AssistantMessageEvent, model: ModelLike, apiKey?: string) => void
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -57,9 +58,14 @@ export function createCommandCodeTransportRouter(deps: TransportDependencies) {
   function pipe(
     source: AssistantMessageEventStreamLike,
     target: AssistantMessageEventStreamLike,
+    model: ModelLike,
+    apiKey?: string,
   ): Promise<void> {
     return (async () => {
-      for await (const event of source) target.push(event)
+      for await (const event of source) {
+        target.push(event)
+        deps.observeEvent?.(event, model, apiKey)
+      }
     })()
   }
 
@@ -83,8 +89,6 @@ export function createCommandCodeTransportRouter(deps: TransportDependencies) {
         transport = "unknown"
       }
       const requestApiKey = options?.apiKey
-      if (transport === "generate") return deps.streamGenerate(model, context, options)
-
       const output = deps.createStream()
       let upgradeRequired = false
       const fetchImpl = options?.fetch ?? fetch
@@ -104,18 +108,24 @@ export function createCommandCodeTransportRouter(deps: TransportDependencies) {
       }
 
       const run = async () => {
+        if (transport === "generate") {
+          await pipe(deps.streamGenerate(model, context, options), output, model, requestApiKey)
+          output.end()
+          return
+        }
         const providerStream = deps.streamProvider(model, context, providerOptions)
 
         for await (const event of providerStream) {
           if (!upgradeRequired) {
             if (apiKey === requestApiKey) transport = "provider"
             output.push(event)
+            deps.observeEvent?.(event, model, requestApiKey)
           }
         }
 
         if (upgradeRequired) {
           if (apiKey === requestApiKey) transport = "generate"
-          await pipe(deps.streamGenerate(model, context, options), output)
+          await pipe(deps.streamGenerate(model, context, options), output, model, requestApiKey)
         }
         output.end()
       }

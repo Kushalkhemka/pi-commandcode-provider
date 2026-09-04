@@ -38,6 +38,7 @@ import { normalizeCommandCodeMessage } from "./src/overflow.ts"
 import { MODEL_COSTS, ZERO_MODEL_COST } from "./src/pricing.ts"
 import { withCommandCodePromptCache } from "./src/prompt-cache.ts"
 import { registerCommandCodeQuota } from "./src/quota-command.ts"
+import { createQuotaBoardReporter } from "./src/quota-board-telemetry.ts"
 import { createCommandCodeRuntime } from "./src/runtime.ts"
 import { createCommandCodeTransportRouter } from "./src/transport.ts"
 
@@ -164,6 +165,7 @@ export default async function (pi: ExtensionAPI) {
     calculateCost: calculateCommandCodeCost,
     apiBase: legacyApiBase(apiBase),
   })
+  const quotaBoardReporter = createQuotaBoardReporter()
   const resolveStreamOptions = (
     options?: Parameters<typeof streamNativeProvider>[2],
   ): Parameters<typeof streamNativeProvider>[2] => {
@@ -174,6 +176,7 @@ export default async function (pi: ExtensionAPI) {
   const transport = createCommandCodeTransportRouter({
     allowLegacyGenerate: process.env.COMMANDCODE_ENABLE_LEGACY_GO === "1",
     createStream: () => new AssistantMessageEventStream(),
+    observeEvent: quotaBoardReporter?.observe,
     streamProvider: (model, context, options) =>
       streamNativeProvider(
         { ...model, api: apiForModelId(model.id), compat: model.compatConfig ?? model.compat },

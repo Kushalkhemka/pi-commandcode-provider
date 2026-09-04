@@ -186,8 +186,22 @@ Displayed costs are estimates. CommandCode's usage page remains authoritative fo
 | `COMMANDCODE_MODELS_CACHE`       | Pi agent directory    | Override the catalog cache path                                       |
 | `COMMANDCODE_MODELS_TIMEOUT_MS`  | `10000`               | Bound model discovery and refresh requests                            |
 | `COMMANDCODE_ENABLE_LEGACY_GO=1` | disabled              | Explicitly enable the undocumented Go-plan fallback                   |
+| `COMMANDCODE_QUOTA_BOARD_URL`    | disabled              | Send final Pi usage to a running local Quota Board                    |
+| `COMMANDCODE_QUOTA_BOARD_TOKEN`  | —                     | Bearer token for a non-loopback Quota Board                           |
 
 Legacy aliases `COMMANDCODE_API_KEY`, `COMMANDCODE_ZDR`, and existing auth-file shapes remain accepted for migration compatibility.
+
+## CommandCode Quota Board
+
+The repository includes a separate [multi-account quota dashboard](./quota-board/README.md) with pure-black and light themes, global and per-key statistics, rolling quota windows, associated account emails, and encrypted local key storage.
+
+To populate its model and cache charts automatically from Pi's final streamed usage events:
+
+```bash
+export COMMANDCODE_QUOTA_BOARD_URL="http://127.0.0.1:8787"
+```
+
+The provider sends a one-way, best-effort usage event after each completed or failed request. It sends a short hash fingerprint—not the API key—so the board can match the event to an account already connected there. Dashboard availability never delays or breaks a Pi response.
 
 ## Legacy Go mode
 
