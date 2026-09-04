@@ -29,11 +29,12 @@ export function TokenFlowChart({ points, totals }: { points: TrendPoint[]; total
     const cacheRead = totals?.cacheReadTokens ?? 0
     const cacheWrite = totals?.cacheWriteTokens ?? 0
     const total = input + output + cacheRead + cacheWrite
+    const cacheObserved = totals ? totals.cacheHitRate !== null : false
     const rows = [
-      { label: "Input", value: input, color: "var(--cyan)" },
-      { label: "Output", value: output, color: "var(--violet)" },
-      { label: "Cache read", value: cacheRead, color: "var(--mint)" },
-      { label: "Cache write", value: cacheWrite, color: "var(--amber)" },
+      { label: "Input", value: input, color: "var(--cyan)", observed: true },
+      { label: "Output", value: output, color: "var(--violet)", observed: true },
+      { label: "Cache read", value: cacheRead, color: "var(--mint)", observed: cacheObserved },
+      { label: "Cache write", value: cacheWrite, color: "var(--amber)", observed: cacheObserved },
     ]
     return (
       <div className="token-composition">
@@ -46,8 +47,8 @@ export function TokenFlowChart({ points, totals }: { points: TrendPoint[]; total
           {rows.map((row) => (
             <div key={row.label}>
               <span><i style={{ background: row.color }} />{row.label}</span>
-              <strong>{compact(row.value)}</strong>
-              <small>{total ? `${((row.value / total) * 100).toFixed(row.value > 0 && row.value / total < 0.01 ? 1 : 0)}%` : "—"}</small>
+              <strong>{row.observed ? compact(row.value) : "—"}</strong>
+              <small>{row.observed && total ? `${((row.value / total) * 100).toFixed(row.value > 0 && row.value / total < 0.01 ? 1 : 0)}%` : "—"}</small>
             </div>
           ))}
         </div>

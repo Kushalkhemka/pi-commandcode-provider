@@ -29,13 +29,13 @@ related_targets: ["quota-board/src/components/Pages.tsx","quota-board/src/compon
 
 - Every usage number, state, reset label, and account identity is supplied by live or persisted application data. Missing model/cache/history fields use explicit unavailable states.
 - Raw API keys never enter browser responses, screenshots, examples, or documentation. A fingerprint may appear only where the product already exposes the safe fingerprint field.
-- Account imagery is a deterministic neutral monogram. The official asset at `../../quota-board/public/commandcode-symbol.svg` is the only CommandCode mark used by the shell.
+- Account imagery uses deterministically assigned CC0 illustrations as decorative markers, with no claim that they represent the account owner. The official asset at `../../quota-board/public/commandcode-symbol.svg` is the only CommandCode brand mark used by the shell.
 
 ## Intentional differences from the generated concept and references
 
 - The approved image established the fleet-ledger composition and density, not literal identity. The final build replaces its generated turquoise concept mark with the official black-and-white CommandCode symbol.
 - The final surface removes the concept's atmospheric glow and oversized title treatment in favor of flat true black, quieter one-pixel dividers, and a compact sticky top bar.
 - Real reset timing, plan, cache visibility, status, and error/empty semantics take precedence over the concept's illustrative values and column order.
-- The final table uses neutral monograms instead of generated face avatars and reserves amber for verified near-limit state.
+- The final table uses bundled CC0 illustration avatars as user-requested account markers and reserves amber for verified near-limit state.
 - The top-bar eyebrow was removed, supporting microtype was raised where it affected legibility, and narrow status/disclosure controls were separated after finish review.
 - Higgsfield and Mobbin remain behavioral references for compact usage history and professional operational hierarchy; their branding, visual effects, and data are not copied.

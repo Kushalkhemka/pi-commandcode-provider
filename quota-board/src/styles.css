@@ -276,7 +276,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .account-name > span { min-width: 0; display: grid; gap: 3px; }
 .account-name strong { overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; white-space: nowrap; }
 .account-name small { overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-size: 10px; white-space: nowrap; }
-.account-avatar { width: 34px; height: 34px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--surface-hover); font: 600 10px "IBM Plex Mono"; letter-spacing: .04em; }
+.account-avatar { width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-hover); object-fit: cover; }
 .quota-cell { min-width: 0; display: grid; gap: 4px; }
 .quota-cell strong { font: 500 10px "IBM Plex Mono"; }
 .quota-cell small { color: var(--muted); font: 400 10px "IBM Plex Mono"; }

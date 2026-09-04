@@ -105,4 +105,40 @@ describe("quota analytics", () => {
     expect(result.totals.successRate).toBeCloseTo(0.98)
     expect(result.totals.monthlyRemaining).toBe(52)
   })
+
+  it("does not report a zero cache hit rate when cache telemetry is unavailable", () => {
+    const withoutTelemetry: UsageSnapshot = {
+      ...snapshot,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      models: [],
+      telemetryCoverage: 0,
+    }
+    const database: DatabaseShape = {
+      version: 1,
+      accounts: [account],
+      snapshots: { [account.id]: [withoutTelemetry] },
+      telemetry: [],
+    }
+
+    expect(dashboardData(database, "24h").totals.cacheHitRate).toBeNull()
+  })
+
+  it("reports a real zero after cache-eligible telemetry is observed", () => {
+    const zeroHits: UsageSnapshot = {
+      ...snapshot,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      models: [{ ...snapshot.models[0], cacheReadTokens: 0, cacheWriteTokens: 0 }],
+      telemetryCoverage: 0,
+    }
+    const database: DatabaseShape = {
+      version: 1,
+      accounts: [account],
+      snapshots: { [account.id]: [zeroHits] },
+      telemetry: [],
+    }
+
+    expect(dashboardData(database, "24h").totals.cacheHitRate).toBe(0)
+  })
 })

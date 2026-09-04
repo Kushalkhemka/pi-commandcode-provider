@@ -19,9 +19,8 @@ export function AccountDetail({
   onRemove: () => void
 }) {
   const snapshot = account.snapshot
-  const cacheDenominator = snapshot
-    ? snapshot.inputTokens + snapshot.cacheReadTokens
-    : 0
+  const observedInput = snapshot?.models.reduce((sum, model) => sum + model.inputTokens, 0) ?? 0
+  const cacheDenominator = snapshot ? observedInput + snapshot.cacheReadTokens : 0
   const cacheRate = snapshot && cacheDenominator > 0 ? snapshot.cacheReadTokens / cacheDenominator : null
   return (
     <aside className="account-detail">

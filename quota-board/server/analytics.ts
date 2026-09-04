@@ -153,10 +153,11 @@ export function dashboardData(database: DatabaseShape, range: RangeKey): Dashboa
   const outputTokens = snapshots.reduce((sum, item) => sum + item.outputTokens, 0)
   const cacheReadTokens = snapshots.reduce((sum, item) => sum + item.cacheReadTokens, 0)
   const cacheWriteTokens = snapshots.reduce((sum, item) => sum + item.cacheWriteTokens, 0)
-  const cacheDenominator = inputTokens + cacheReadTokens
   const totalRequests = snapshots.reduce((sum, item) => sum + item.totalRequests, 0)
   const completed = snapshots.reduce((sum, item) => sum + item.completedRequests, 0)
   const models = aggregateModels(accounts)
+  const observedInputTokens = models.reduce((sum, model) => sum + model.inputTokens, 0)
+  const cacheDenominator = observedInputTokens + cacheReadTokens
 
   return {
     generatedAt: new Date().toISOString(),

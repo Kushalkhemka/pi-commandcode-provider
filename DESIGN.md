@@ -158,7 +158,7 @@ Information density is earned through alignment, quiet dividers, restrained type
 - Mint capacity signals, amber exceptions, and restrained token-series color.
 - Instrument Sans for interface language and IBM Plex Mono for measured values.
 - Thin borders and tonal layers at rest; elevation is reserved for overlays.
-- Official CommandCode identity, neutral account monograms, and no decorative portraits.
+- Official CommandCode identity with deterministic CC0 illustration avatars for fast account recognition.
 - Responsive ledger behavior from wide desktop to the 320px minimum viewport.
 
 ## Colors
@@ -284,7 +284,7 @@ Four capacity metrics, one token-composition band, and four operational facts fo
 
 ### Account Ledger
 
-Desktop rows align identity, plan, three quota windows, token/cache evidence, status, and disclosure action in one line. Mobile rows become stacked quota summaries without losing identity, state, or the three decision-critical capacity measures. Account marks are deterministic neutral monograms, never generated faces or decorative avatars.
+Desktop rows align identity, plan, three quota windows, token/cache evidence, status, and disclosure action in one line. Mobile rows become stacked quota summaries without losing identity, state, or the three decision-critical capacity measures. Account avatars are deterministic CC0 illustrations used as visual markers; empty alternative text keeps them decorative rather than presenting them as a real profile identity.
 
 ### Status, Progress, and Empty States
 
@@ -296,7 +296,7 @@ Healthy, warning, error, and pending states use both a text label and a dot; col
 
 - **Do** keep the official CommandCode symbol and product name as the only brand identity in the shell.
 - **Do** make remaining capacity, reset timing, and account state readable before secondary analytics.
-- **Do** use neutral monograms derived from account labels for private, stable account recognition.
+- **Do** assign the bundled CC0 illustration avatars deterministically for stable account recognition.
 - **Do** preserve full dark/light semantic parity and keyboard-visible focus.
 - **Do** use “Not observed,” an em dash, or an explanatory empty state when provider data is absent.
 - **Do** preserve the overview-to-account-ledger sequence and the 320px operating floor.
@@ -306,6 +306,6 @@ Healthy, warning, error, and pending states use both a text label and a dot; col
 - **Don't** fabricate model, cache, request, cost, success, or historical usage values to fill visual space.
 - **Don't** expose raw API keys, credentials, or local-vault contents in visual examples or interface copy.
 - **Don't** add decorative gradients, glow, glass cards, or generic dashboard acreage to the true-black ledger.
-- **Don't** use generated human faces for accounts or replace the official CommandCode symbol with a concept mark.
+- **Don't** describe decorative account illustrations as real user portraits or replace the official CommandCode symbol with a concept mark.
 - **Don't** let microtype, status actions, or disclosure controls collide at narrow widths.
 - **Don't** add an eyebrow or slogan above the compact top-bar title.
