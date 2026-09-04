@@ -25,7 +25,11 @@ function avatarFor(account: AccountView): string {
   const seed = account.keyFingerprint
   let hash = 0
   for (const character of seed) hash = (hash * 31 + character.charCodeAt(0)) >>> 0
-  return `/avatars/avatar-${String((hash % 50) + 1).padStart(2, "0")}.svg`
+  const bucket = hash % 50
+  // Preserve the two original assignments shown before the pool expansion,
+  // while keeping this a one-to-one permutation across all 50 avatar slots.
+  const compatibilityBucket = bucket === 18 ? 0 : bucket === 0 ? 18 : bucket === 13 ? 1 : bucket === 1 ? 13 : bucket
+  return `/avatars/avatar-${String(compatibilityBucket + 1).padStart(2, "0")}.svg`
 }
 
 export function AccountTable({

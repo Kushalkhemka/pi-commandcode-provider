@@ -122,7 +122,7 @@ npm run check
 
 This runs the vault and analytics tests, TypeScript validation, and the production build.
 
-The bundled account art can be regenerated with `npm run sync:avatars`. It uses deterministic local SVG variants of [DiceBear Notionists](https://www.dicebear.com/styles/notionists/), distributed under CC0.
+The bundled account art can be regenerated with `npm run sync:avatars`. It preserves the original eight portraits and expands the same restrained style with deterministic local SVG variants of [DiceBear Notionists](https://www.dicebear.com/styles/notionists/), distributed under CC0.
 
 ## Design references
 
