@@ -21,11 +21,11 @@ function windowValue(account: AccountView, name: "fiveHour" | "weekly") {
   return account.snapshot?.windows.find((window) => window.name === name) ?? null
 }
 
-function avatarFor(account: AccountView): string {
-  const seed = account.keyFingerprint
-  let hash = 0
-  for (const character of seed) hash = (hash * 31 + character.charCodeAt(0)) >>> 0
-  return `/avatars/avatar-${String((hash % 8) + 1).padStart(2, "0")}.svg`
+function accountMark(account: AccountView): string {
+  const words = account.label.trim().split(/\s+/).filter(Boolean)
+  if (words.length > 1) return `${words[0][0]}${words.at(-1)?.[0] ?? ""}`.toUpperCase()
+  const source = words[0] || account.email || account.emailMasked || "CC"
+  return source.slice(0, 2).toUpperCase()
 }
 
 export function AccountTable({
@@ -73,7 +73,7 @@ export function AccountTable({
             role="row"
           >
             <span className="account-name">
-              <img className="account-avatar" src={avatarFor(account)} alt="" />
+              <span className="account-avatar" aria-hidden="true">{accountMark(account)}</span>
               <span><strong>{account.label}</strong><small>{account.email ?? account.emailMasked}</small></span>
             </span>
             <span>{planName(account.planId)}</span>

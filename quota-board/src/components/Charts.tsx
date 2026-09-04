@@ -51,7 +51,6 @@ export function TokenFlowChart({ points, totals }: { points: TrendPoint[]; total
             </div>
           ))}
         </div>
-        <p>{points.length === 1 ? "Current cumulative snapshot · trend appears after the next time bucket" : "Current cumulative snapshot"}</p>
       </div>
     )
   }

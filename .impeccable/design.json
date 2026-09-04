@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-04T16:49:21Z",
+  "title": "Design System: CommandCode Quota Board",
+  "extensions": {
+    "colorMeta": {
+      "black-canvas": {
+        "role": "neutral",
+        "displayName": "Black Canvas",
+        "canonical": "#000000",
+        "tonalRamp": ["oklch(15% 0.003 160)", "oklch(25% 0.003 160)", "oklch(35% 0.003 160)", "oklch(47% 0.003 160)", "oklch(59% 0.003 160)", "oklch(71% 0.003 160)", "oklch(83% 0.003 160)", "oklch(95% 0.003 160)"]
+      },
+      "charcoal-surface": {
+        "role": "neutral",
+        "displayName": "Charcoal Surface",
+        "canonical": "#101111",
+        "tonalRamp": ["oklch(15% 0.004 160)", "oklch(25% 0.004 160)", "oklch(35% 0.004 160)", "oklch(47% 0.004 160)", "oklch(59% 0.004 160)", "oklch(71% 0.004 160)", "oklch(83% 0.004 160)", "oklch(95% 0.004 160)"]
+      },
+      "charcoal-raised": {
+        "role": "neutral",
+        "displayName": "Charcoal Raised",
+        "canonical": "#181919",
+        "tonalRamp": ["oklch(15% 0.005 160)", "oklch(25% 0.005 160)", "oklch(35% 0.005 160)", "oklch(47% 0.005 160)", "oklch(59% 0.005 160)", "oklch(71% 0.005 160)", "oklch(83% 0.005 160)", "oklch(95% 0.005 160)"]
+      },
+      "charcoal-hover": {
+        "role": "neutral",
+        "displayName": "Charcoal Hover",
+        "canonical": "#1d1f1e",
+        "tonalRamp": ["oklch(15% 0.007 160)", "oklch(25% 0.007 160)", "oklch(35% 0.007 160)", "oklch(47% 0.007 160)", "oklch(59% 0.007 160)", "oklch(71% 0.007 160)", "oklch(83% 0.007 160)", "oklch(95% 0.007 160)"]
+      },
+      "soft-white": {
+        "role": "neutral",
+        "displayName": "Soft White",
+        "canonical": "#f3f5f3",
+        "tonalRamp": ["oklch(15% 0.006 150)", "oklch(25% 0.006 150)", "oklch(35% 0.006 150)", "oklch(47% 0.006 150)", "oklch(59% 0.006 150)", "oklch(71% 0.006 150)", "oklch(83% 0.006 150)", "oklch(95% 0.006 150)"]
+      },
+      "pure-white": {
+        "role": "neutral",
+        "displayName": "Pure White",
+        "canonical": "#ffffff",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(25% 0 0)", "oklch(35% 0 0)", "oklch(47% 0 0)", "oklch(59% 0 0)", "oklch(71% 0 0)", "oklch(83% 0 0)", "oklch(95% 0 0)"]
+      },
+      "steel-muted": {
+        "role": "neutral",
+        "displayName": "Steel Muted",
+        "canonical": "#969b97",
+        "tonalRamp": ["oklch(15% 0.009 155)", "oklch(25% 0.009 155)", "oklch(35% 0.009 155)", "oklch(47% 0.009 155)", "oklch(59% 0.009 155)", "oklch(71% 0.009 155)", "oklch(83% 0.009 155)", "oklch(95% 0.009 155)"]
+      },
+      "dim-muted": {
+        "role": "neutral",
+        "displayName": "Dim Muted",
+        "canonical": "#676c68",
+        "tonalRamp": ["oklch(15% 0.009 155)", "oklch(25% 0.009 155)", "oklch(35% 0.009 155)", "oklch(47% 0.009 155)", "oklch(59% 0.009 155)", "oklch(71% 0.009 155)", "oklch(83% 0.009 155)", "oklch(95% 0.009 155)"]
+      },
+      "graphite-line": {
+        "role": "neutral",
+        "displayName": "Graphite Line",
+        "canonical": "#292c2a",
+        "tonalRamp": ["oklch(15% 0.008 155)", "oklch(25% 0.008 155)", "oklch(35% 0.008 155)", "oklch(47% 0.008 155)", "oklch(59% 0.008 155)", "oklch(71% 0.008 155)", "oklch(83% 0.008 155)", "oklch(95% 0.008 155)"]
+      },
+      "soft-graphite-line": {
+        "role": "neutral",
+        "displayName": "Soft Graphite Line",
+        "canonical": "#202321",
+        "tonalRamp": ["oklch(15% 0.008 155)", "oklch(25% 0.008 155)", "oklch(35% 0.008 155)", "oklch(47% 0.008 155)", "oklch(59% 0.008 155)", "oklch(71% 0.008 155)", "oklch(83% 0.008 155)", "oklch(95% 0.008 155)"]
+      },
+      "action-mint": {
+        "role": "primary",
+        "displayName": "Action Mint",
+        "canonical": "#75e2ba",
+        "tonalRamp": ["oklch(15% 0.09 160)", "oklch(25% 0.09 160)", "oklch(35% 0.09 160)", "oklch(47% 0.09 160)", "oklch(59% 0.09 160)", "oklch(71% 0.09 160)", "oklch(83% 0.09 160)", "oklch(95% 0.09 160)"]
+      },
+      "action-ink": {
+        "role": "neutral",
+        "displayName": "Action Ink",
+        "canonical": "#041610",
+        "tonalRamp": ["oklch(15% 0.025 160)", "oklch(25% 0.025 160)", "oklch(35% 0.025 160)", "oklch(47% 0.025 160)", "oklch(59% 0.025 160)", "oklch(71% 0.025 160)", "oklch(83% 0.025 160)", "oklch(95% 0.025 160)"]
+      },
+      "token-cyan": {
+        "role": "secondary",
+        "displayName": "Token Cyan",
+        "canonical": "#66c7f0",
+        "tonalRamp": ["oklch(15% 0.1 225)", "oklch(25% 0.1 225)", "oklch(35% 0.1 225)", "oklch(47% 0.1 225)", "oklch(59% 0.1 225)", "oklch(71% 0.1 225)", "oklch(83% 0.1 225)", "oklch(95% 0.1 225)"]
+      },
+      "token-violet": {
+        "role": "secondary",
+        "displayName": "Token Violet",
+        "canonical": "#a78bfa",
+        "tonalRamp": ["oklch(15% 0.11 295)", "oklch(25% 0.11 295)", "oklch(35% 0.11 295)", "oklch(47% 0.11 295)", "oklch(59% 0.11 295)", "oklch(71% 0.11 295)", "oklch(83% 0.11 295)", "oklch(95% 0.11 295)"]
+      },
+      "warning-amber": {
+        "role": "tertiary",
+        "displayName": "Warning Amber",
+        "canonical": "#e8bc68",
+        "tonalRamp": ["oklch(15% 0.1 80)", "oklch(25% 0.1 80)", "oklch(35% 0.1 80)", "oklch(47% 0.1 80)", "oklch(59% 0.1 80)", "oklch(71% 0.1 80)", "oklch(83% 0.1 80)", "oklch(95% 0.1 80)"]
+      },
+      "danger-coral": {
+        "role": "tertiary",
+        "displayName": "Danger Coral",
+        "canonical": "#f07676",
+        "tonalRamp": ["oklch(15% 0.12 25)", "oklch(25% 0.12 25)", "oklch(35% 0.12 25)", "oklch(47% 0.12 25)", "oklch(59% 0.12 25)", "oklch(71% 0.12 25)", "oklch(83% 0.12 25)", "oklch(95% 0.12 25)"]
+      },
+      "paper-canvas": {
+        "role": "neutral",
+        "displayName": "Paper Canvas",
+        "canonical": "#f7f7f5",
+        "tonalRamp": ["oklch(15% 0.004 100)", "oklch(25% 0.004 100)", "oklch(35% 0.004 100)", "oklch(47% 0.004 100)", "oklch(59% 0.004 100)", "oklch(71% 0.004 100)", "oklch(83% 0.004 100)", "oklch(95% 0.004 100)"]
+      },
+      "white-surface": {
+        "role": "neutral",
+        "displayName": "White Surface",
+        "canonical": "#ffffff",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(25% 0 0)", "oklch(35% 0 0)", "oklch(47% 0 0)", "oklch(59% 0 0)", "oklch(71% 0 0)", "oklch(83% 0 0)", "oklch(95% 0 0)"]
+      },
+      "pale-hover": {
+        "role": "neutral",
+        "displayName": "Pale Hover",
+        "canonical": "#f0f2ef",
+        "tonalRamp": ["oklch(15% 0.007 140)", "oklch(25% 0.007 140)", "oklch(35% 0.007 140)", "oklch(47% 0.007 140)", "oklch(59% 0.007 140)", "oklch(71% 0.007 140)", "oklch(83% 0.007 140)", "oklch(95% 0.007 140)"]
+      },
+      "charcoal-ink": {
+        "role": "neutral",
+        "displayName": "Charcoal Ink",
+        "canonical": "#202020",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(25% 0 0)", "oklch(35% 0 0)", "oklch(47% 0 0)", "oklch(59% 0 0)", "oklch(71% 0 0)", "oklch(83% 0 0)", "oklch(95% 0 0)"]
+      },
+      "near-black-ink": {
+        "role": "neutral",
+        "displayName": "Near-black Ink",
+        "canonical": "#050505",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(25% 0 0)", "oklch(35% 0 0)", "oklch(47% 0 0)", "oklch(59% 0 0)", "oklch(71% 0 0)", "oklch(83% 0 0)", "oklch(95% 0 0)"]
+      },
+      "warm-muted": {
+        "role": "neutral",
+        "displayName": "Warm Muted",
+        "canonical": "#71716c",
+        "tonalRamp": ["oklch(15% 0.008 95)", "oklch(25% 0.008 95)", "oklch(35% 0.008 95)", "oklch(47% 0.008 95)", "oklch(59% 0.008 95)", "oklch(71% 0.008 95)", "oklch(83% 0.008 95)", "oklch(95% 0.008 95)"]
+      },
+      "pale-muted": {
+        "role": "neutral",
+        "displayName": "Pale Muted",
+        "canonical": "#a2a29d",
+        "tonalRamp": ["oklch(15% 0.008 95)", "oklch(25% 0.008 95)", "oklch(35% 0.008 95)", "oklch(47% 0.008 95)", "oklch(59% 0.008 95)", "oklch(71% 0.008 95)", "oklch(83% 0.008 95)", "oklch(95% 0.008 95)"]
+      },
+      "light-graphite-line": {
+        "role": "neutral",
+        "displayName": "Light Graphite Line",
+        "canonical": "#d8dcd8",
+        "tonalRamp": ["oklch(15% 0.008 150)", "oklch(25% 0.008 150)", "oklch(35% 0.008 150)", "oklch(47% 0.008 150)", "oklch(59% 0.008 150)", "oklch(71% 0.008 150)", "oklch(83% 0.008 150)", "oklch(95% 0.008 150)"]
+      },
+      "light-soft-line": {
+        "role": "neutral",
+        "displayName": "Light Soft Line",
+        "canonical": "#e7eae7",
+        "tonalRamp": ["oklch(15% 0.008 150)", "oklch(25% 0.008 150)", "oklch(35% 0.008 150)", "oklch(47% 0.008 150)", "oklch(59% 0.008 150)", "oklch(71% 0.008 150)", "oklch(83% 0.008 150)", "oklch(95% 0.008 150)"]
+      },
+      "forest-action": {
+        "role": "primary",
+        "displayName": "Forest Action",
+        "canonical": "#116e54",
+        "tonalRamp": ["oklch(15% 0.08 160)", "oklch(25% 0.08 160)", "oklch(35% 0.08 160)", "oklch(47% 0.08 160)", "oklch(59% 0.08 160)", "oklch(71% 0.08 160)", "oklch(83% 0.08 160)", "oklch(95% 0.08 160)"]
+      },
+      "light-action-ink": {
+        "role": "neutral",
+        "displayName": "Light Action Ink",
+        "canonical": "#ffffff",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(25% 0 0)", "oklch(35% 0 0)", "oklch(47% 0 0)", "oklch(59% 0 0)", "oklch(71% 0 0)", "oklch(83% 0 0)", "oklch(95% 0 0)"]
+      },
+      "light-token-cyan": {
+        "role": "secondary",
+        "displayName": "Light Token Cyan",
+        "canonical": "#1677a0",
+        "tonalRamp": ["oklch(15% 0.1 225)", "oklch(25% 0.1 225)", "oklch(35% 0.1 225)", "oklch(47% 0.1 225)", "oklch(59% 0.1 225)", "oklch(71% 0.1 225)", "oklch(83% 0.1 225)", "oklch(95% 0.1 225)"]
+      },
+      "light-token-violet": {
+        "role": "secondary",
+        "displayName": "Light Token Violet",
+        "canonical": "#7250b5",
+        "tonalRamp": ["oklch(15% 0.11 295)", "oklch(25% 0.11 295)", "oklch(35% 0.11 295)", "oklch(47% 0.11 295)", "oklch(59% 0.11 295)", "oklch(71% 0.11 295)", "oklch(83% 0.11 295)", "oklch(95% 0.11 295)"]
+      },
+      "light-capacity-green": {
+        "role": "primary",
+        "displayName": "Light Capacity Green",
+        "canonical": "#168464",
+        "tonalRamp": ["oklch(15% 0.09 160)", "oklch(25% 0.09 160)", "oklch(35% 0.09 160)", "oklch(47% 0.09 160)", "oklch(59% 0.09 160)", "oklch(71% 0.09 160)", "oklch(83% 0.09 160)", "oklch(95% 0.09 160)"]
+      },
+      "light-warning-amber": {
+        "role": "tertiary",
+        "displayName": "Light Warning Amber",
+        "canonical": "#a16713",
+        "tonalRamp": ["oklch(15% 0.1 80)", "oklch(25% 0.1 80)", "oklch(35% 0.1 80)", "oklch(47% 0.1 80)", "oklch(59% 0.1 80)", "oklch(71% 0.1 80)", "oklch(83% 0.1 80)", "oklch(95% 0.1 80)"]
+      },
+      "light-danger-red": {
+        "role": "tertiary",
+        "displayName": "Light Danger Red",
+        "canonical": "#b93939",
+        "tonalRamp": ["oklch(15% 0.12 25)", "oklch(25% 0.12 25)", "oklch(35% 0.12 25)", "oklch(47% 0.12 25)", "oklch(59% 0.12 25)", "oklch(71% 0.12 25)", "oklch(83% 0.12 25)", "oklch(95% 0.12 25)"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Section Display", "purpose": "Desktop page-level section titles; compressed on mobile." },
+      "headline": { "displayName": "Module Headline", "purpose": "Usage overview and modal headings." },
+      "title": { "displayName": "Panel Title", "purpose": "Panel and compact shell headings." },
+      "body": { "displayName": "Operational Body", "purpose": "Explanations and longer evidence notes." },
+      "label": { "displayName": "Ledger Label", "purpose": "Table headings, metadata, and compact controls." },
+      "data": { "displayName": "Measured Data", "purpose": "Quota, token, credit, percentage, and timestamp values." }
+    },
+    "shadows": [
+      { "name": "modal-lift", "value": "0 24px 80px rgba(0,0,0,.38)", "purpose": "Add-account dialog above its scrim." },
+      { "name": "detail-sheet", "value": "-18px 0 60px rgba(0,0,0,.35)", "purpose": "Account detail overlay below 960px." },
+      { "name": "navigation-drawer", "value": "20px 0 80px rgba(0,0,0,.45)", "purpose": "Off-canvas navigation below 760px." }
+    ],
+    "motion": [
+      { "name": "drawer-slide", "value": "transform .2s ease", "purpose": "Open and close the mobile navigation drawer." },
+      { "name": "loading-spin", "value": "spin .9s linear infinite", "purpose": "Signal an active refresh without displacing layout." },
+      { "name": "reduced-motion", "value": ".01ms", "purpose": "Collapse animation and transition durations when reduced motion is requested." }
+    ],
+    "breakpoints": [
+      { "name": "compact-rail", "value": "1180px" },
+      { "name": "overlay-detail", "value": "960px" },
+      { "name": "mobile-ledger", "value": "760px" },
+      { "name": "minimum-viewport", "value": "320px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single highest-priority action in a local task group.",
+      "html": "<button class=\"ds-btn-primary\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>Add account</button>",
+      "css": ".ds-btn-primary { height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 13px; border: 1px solid var(--accent); border-radius: 6px; background: var(--accent); color: var(--accent-ink); font: 500 11px 'Instrument Sans', sans-serif; cursor: pointer; } .ds-btn-primary svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; } .ds-btn-primary:hover { background: color-mix(in srgb, var(--accent) 88%, var(--ink-strong)); border-color: transparent; } .ds-btn-primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-btn-primary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A bordered or transparent operational action with lower priority.",
+      "html": "<button class=\"ds-btn-secondary\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.34 5.66M20 4v7h-7\"/></svg>Refresh all</button>",
+      "css": ".ds-btn-secondary { height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--ink); font: 500 11px 'Instrument Sans', sans-serif; cursor: pointer; } .ds-btn-secondary svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-btn-secondary:hover { background: var(--surface-hover); border-color: color-mix(in srgb, var(--line) 50%, var(--ink)); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-btn-secondary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Range Selector",
+      "kind": "chip",
+      "refersTo": "range-active",
+      "description": "A compact segmented control for the board's time range.",
+      "html": "<div class=\"ds-range\" role=\"group\" aria-label=\"Usage range\"><button class=\"ds-range-active\">24h</button><button>7d</button><button>30d</button></div>",
+      "css": ".ds-range { display: inline-flex; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); } .ds-range button { min-width: 42px; height: 25px; border: 0; border-radius: 4px; background: transparent; color: var(--muted); font: 400 10px 'Instrument Sans', sans-serif; cursor: pointer; } .ds-range button:hover { color: var(--ink); background: var(--surface-hover); } .ds-range button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-range .ds-range-active { background: var(--ink-strong); color: var(--canvas); } .ds-range button:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Sidebar Navigation Item",
+      "kind": "nav",
+      "refersTo": "navigation-active",
+      "description": "The active navigation treatment for the desktop rail and mobile drawer.",
+      "html": "<button class=\"ds-nav-item ds-nav-active\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/></svg>Overview</button>",
+      "css": ".ds-nav-item { width: 100%; height: 38px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font: 400 13px 'Instrument Sans', sans-serif; text-align: left; cursor: pointer; } .ds-nav-item svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; } .ds-nav-item:hover { color: var(--ink); background: var(--surface-hover); } .ds-nav-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-nav-active { color: var(--ink-strong); background: var(--surface-hover); } .ds-nav-active svg { color: var(--accent); } .ds-nav-item:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Usage Metric",
+      "kind": "card",
+      "refersTo": "usage-metric",
+      "description": "A compact capacity measure that keeps label, value, progress, and evidence together.",
+      "html": "<article class=\"ds-usage-metric\"><span class=\"ds-usage-icon\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 14a8 8 0 1 1 16 0\"/><path d=\"m12 14 4-4\"/></svg></span><div><small>5-hour utilization</small><strong>—</strong><span class=\"ds-progress\"><i></i></span><span>Awaiting live quota data</span></div></article>",
+      "css": ".ds-usage-metric { min-height: 106px; display: flex; align-items: center; gap: 13px; padding: 16px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--surface-raised); color: var(--ink); } .ds-usage-icon { width: 38px; height: 38px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 8px; color: var(--accent); background: color-mix(in srgb, var(--surface-hover) 75%, transparent); } .ds-usage-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; } .ds-usage-metric > div { min-width: 0; flex: 1; display: grid; gap: 6px; } .ds-usage-metric small, .ds-usage-metric > div > span:last-child { overflow: hidden; color: var(--muted); font: 400 10px 'Instrument Sans', sans-serif; text-overflow: ellipsis; white-space: nowrap; } .ds-usage-metric strong { color: var(--ink-strong); font: 500 20px/1.1 'IBM Plex Mono', monospace; letter-spacing: -.03em; } .ds-progress { height: 3px; overflow: hidden; border-radius: 99px; background: var(--line); } .ds-progress i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--mint); } .ds-usage-metric:hover { border-color: var(--line); } .ds-usage-metric:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Account Ledger Row",
+      "kind": "custom",
+      "description": "A responsive account identity and three-window quota summary without invented values.",
+      "html": "<button class=\"ds-account-row\"><span class=\"ds-account-name\"><i class=\"ds-account-avatar\">AC</i><span><strong>Account label</strong><small>Provider identity</small></span></span><span class=\"ds-quota\"><small>5-hour</small><strong>—</strong><i></i></span><span class=\"ds-quota\"><small>Weekly</small><strong>—</strong><i></i></span><span class=\"ds-quota\"><small>Monthly</small><strong>—</strong><i></i></span><span class=\"ds-status\"><i></i>Not synced</span><svg class=\"ds-chevron\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"/></svg></button>",
+      "css": ".ds-account-row { position: relative; width: 100%; min-height: 88px; display: grid; grid-template-columns: minmax(190px, 1.4fr) repeat(3, minmax(96px, 1fr)) 90px 20px; align-items: center; gap: 10px; padding: 13px 15px; border: 0; border-bottom: 1px solid var(--line-soft); background: transparent; color: var(--ink); font: 400 10px 'Instrument Sans', sans-serif; text-align: left; cursor: pointer; } .ds-account-row:hover { background: var(--surface-hover); } .ds-account-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; } .ds-account-row:active { background: var(--surface-hover); } .ds-account-name { min-width: 0; display: flex; align-items: center; gap: 9px; } .ds-account-name > span { min-width: 0; display: grid; gap: 3px; } .ds-account-name strong, .ds-account-name small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-account-name strong { font-size: 11px; font-weight: 500; } .ds-account-name small { color: var(--muted); font-size: 10px; } .ds-account-avatar { width: 34px; height: 34px; flex: 0 0 auto; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-hover); color: var(--ink); font: normal 600 10px 'IBM Plex Mono', monospace; letter-spacing: .04em; } .ds-quota { display: grid; gap: 4px; } .ds-quota small { color: var(--muted); font: 400 10px 'Instrument Sans', sans-serif; text-transform: uppercase; letter-spacing: .04em; } .ds-quota strong { font: 500 10px 'IBM Plex Mono', monospace; } .ds-quota > i { height: 3px; border-radius: 99px; background: var(--line); } .ds-status { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); } .ds-status i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; } .ds-chevron { width: 17px; height: 17px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } @media (max-width: 760px) { .ds-account-row { min-height: 124px; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: center; gap: 12px 10px; padding: 13px 12px; } .ds-account-name { grid-column: 1 / -1; padding-right: 94px; } .ds-status { position: absolute; top: 22px; right: 38px; } .ds-chevron { position: absolute; top: 21px; right: 12px; } }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "text-input",
+      "description": "The compact modal field used for labels, groups, and protected account credentials.",
+      "html": "<label class=\"ds-field\"><span>Account label <small>(optional)</small></span><input placeholder=\"Account label\" /></label>",
+      "css": ".ds-field { display: grid; gap: 7px; color: var(--ink); font: 500 9px 'Instrument Sans', sans-serif; } .ds-field small { color: var(--muted); font-weight: 400; } .ds-field input { width: 100%; height: 37px; padding: 0 10px; border: 1px solid var(--line); border-radius: 5px; background: var(--canvas); color: var(--ink); font: 400 10px 'Instrument Sans', sans-serif; } .ds-field input::placeholder { color: var(--muted-2); } .ds-field input:hover { border-color: color-mix(in srgb, var(--line) 50%, var(--ink)); } .ds-field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-field input:active { border-color: var(--accent); }"
+    },
+    {
+      "name": "Status Indicator",
+      "kind": "chip",
+      "description": "A text-and-dot status that never relies on color alone.",
+      "html": "<span class=\"ds-status-indicator ds-status-pending\"><i></i>Pending</span>",
+      "css": ".ds-status-indicator { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font: 400 10px 'Instrument Sans', sans-serif; text-transform: capitalize; } .ds-status-indicator i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; } .ds-status-indicator:hover { color: var(--ink); } .ds-status-indicator:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-status-indicator:active { opacity: .8; } .ds-status-pending { color: var(--muted); }"
+    },
+    {
+      "name": "Unavailable Telemetry State",
+      "kind": "custom",
+      "description": "The honest replacement for a chart when model or cache telemetry is absent.",
+      "html": "<div class=\"ds-empty\"><strong>Telemetry is not exposed by quota endpoints</strong><span>Send observed provider usage to populate this view.</span></div>",
+      "css": ".ds-empty { min-height: 124px; display: grid; place-content: center; justify-items: center; gap: 8px; padding: 24px; color: var(--muted); text-align: center; } .ds-empty strong { color: var(--ink); font: 600 10px 'Instrument Sans', sans-serif; } .ds-empty span { max-width: 280px; font: 400 9px/1.5 'Instrument Sans', sans-serif; } .ds-empty:hover strong { color: var(--ink-strong); } .ds-empty:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-empty:active { opacity: .9; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Fleet Ledger",
+    "overview": "The system treats account capacity like an operational ledger: exact, compact, and calm enough to remain open all day. True black gives the dark theme an unambiguous foundation, layered charcoal separates working regions, and mint is reserved for capacity and decisive action. The official CommandCode symbol is the identity anchor; the interface does not add a competing visual persona.\n\nInformation density is earned through alignment, quiet dividers, restrained type, and tabular numeric rhythm rather than decorative dashboards. The usage overview and account ledger are visually primary, while charts appear only when the product has observed data. Light mode preserves the same hierarchy with paper-white surfaces and darker semantic colors rather than becoming a washed-out inversion.",
+    "keyCharacteristics": [
+      "True-black dark canvas with compact charcoal working surfaces.",
+      "Mint capacity signals, amber exceptions, and restrained token-series color.",
+      "Instrument Sans for interface language and IBM Plex Mono for measured values.",
+      "Thin borders and tonal layers at rest; elevation is reserved for overlays.",
+      "Official CommandCode identity, neutral account monograms, and no decorative portraits.",
+      "Responsive ledger behavior from wide desktop to the 320px minimum viewport."
+    ],
+    "rules": [
+      { "name": "The Evidence Color Rule", "body": "Mint, amber, coral, cyan, and violet must correspond to an action, a state, or observed telemetry; never use them as decorative fill.", "section": "colors" },
+      { "name": "The Theme Parity Rule", "body": "Dark and light themes preserve role and hierarchy even when their exact semantic colors differ.", "section": "colors" },
+      { "name": "The Number Voice Rule", "body": "Measured values use IBM Plex Mono; navigation and explanatory language use Instrument Sans.", "section": "typography" },
+      { "name": "The First-Viewport Rule", "body": "On the overview surface, do not insert decorative modules between fleet usage and the account ledger.", "section": "layout" },
+      { "name": "The Flat-at-Rest Rule", "body": "Ordinary panels and metrics use borders and tonal contrast; shadows only communicate a covering layer.", "section": "elevation" },
+      { "name": "The Nested Radius Rule", "body": "Smaller elements inside a surface always use a tighter radius than their container.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do keep the official CommandCode symbol and product name as the only brand identity in the shell.",
+      "Do make remaining capacity, reset timing, and account state readable before secondary analytics.",
+      "Do use neutral monograms derived from account labels for private, stable account recognition.",
+      "Do preserve full dark/light semantic parity and keyboard-visible focus.",
+      "Do use “Not observed,” an em dash, or an explanatory empty state when provider data is absent.",
+      "Do preserve the overview-to-account-ledger sequence and the 320px operating floor."
+    ],
+    "donts": [
+      "Don't fabricate model, cache, request, cost, success, or historical usage values to fill visual space.",
+      "Don't expose raw API keys, credentials, or local-vault contents in visual examples or interface copy.",
+      "Don't add decorative gradients, glow, glass cards, or generic dashboard acreage to the true-black ledger.",
+      "Don't use generated human faces for accounts or replace the official CommandCode symbol with a concept mark.",
+      "Don't let microtype, status actions, or disclosure controls collide at narrow widths.",
+      "Don't add an eyebrow or slogan above the compact top-bar title."
+    ]
+  }
+}

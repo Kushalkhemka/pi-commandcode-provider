@@ -103,7 +103,7 @@ export function App() {
   return (
     <div className={`app-shell ${selected ? "app-shell--detail" : ""}`}>
       <aside className={`sidebar ${mobileNav ? "sidebar--open" : ""}`}>
-        <img className="brand-mark" src="/commandcode-symbol.svg" alt="CommandCode" />
+        <div className="sidebar-brand"><img className="brand-mark" src="/commandcode-symbol.svg" alt="CommandCode" /><span>CommandCode</span></div>
         <button className="mobile-close" onClick={() => setMobileNav(false)} aria-label="Close navigation"><X size={20} /></button>
         <nav>
           {navItems.map(({ id, label, icon: Icon }) => (
@@ -117,12 +117,13 @@ export function App() {
         <header className="topbar">
           <button className="mobile-menu" onClick={() => setMobileNav(true)} aria-label="Open navigation"><Menu size={22} /></button>
           <img className="mobile-brand" src="/commandcode-symbol.svg" alt="" />
-          <div className="topbar__title"><small>CommandCode</small><h1>Quota Board</h1></div>
+          <div className="topbar__title"><h1>Quota Board</h1></div>
           <div className="topbar__actions">
             <span className="last-sync">Last updated: {data ? new Date(data.generatedAt).toLocaleTimeString() : "—"}<i /></span>
             <button type="button" className="icon-button theme-toggle" onClick={() => setTheme((value) => value === "dark" ? "light" : "dark")} aria-label={`Use ${theme === "dark" ? "light" : "dark"} mode`}>
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
+            <button type="button" className="mobile-add" onClick={() => setAddOpen(true)} aria-label="Add account"><Plus size={17} /></button>
             <button type="button" className="text-button" onClick={refreshEverything} disabled={busy}><RefreshCw size={16} className={busy ? "spin" : ""} />Refresh all</button>
             <button type="button" className="button button--primary" onClick={() => setAddOpen(true)}><Plus size={17} />Add account</button>
           </div>
@@ -151,7 +152,6 @@ export function App() {
 
       {selected && <AccountDetail account={selected} onClose={() => setSelectedId(null)} onRefresh={refreshSelected} onRemove={removeSelected} />}
 
-      <button className="mobile-add" onClick={() => setAddOpen(true)}><Plus size={20} />Add account</button>
       {addOpen && <AddAccountModal onClose={() => setAddOpen(false)} onAdded={() => { setAddOpen(false); void load(); setNotice({ text: "Account connected" }) }} />}
     </div>
   )

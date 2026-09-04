@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Database, ShieldCheck } from "lucide-react"
+import { Activity, AlertTriangle, CalendarClock, CheckCircle2, Coins, Database, Gauge, ShieldCheck } from "lucide-react"
 import type { AccountView, DashboardData } from "../types"
 import { AccountTable, compact } from "./AccountTable"
 import { ModelMix, TokenFlowChart } from "./Charts"
@@ -17,23 +17,21 @@ export function OverviewPage({
   const weekly = aggregateWindow(data.accounts, "weekly")
   return (
     <div className="overview-page">
-      <section className="metric-rail">
-        <Metric label="Monthly credits left" value={`$${data.totals.monthlyRemaining.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} detail={data.totals.monthlyCap ? `${Math.round((data.totals.monthlyRemaining / data.totals.monthlyCap) * 100)}% of $${data.totals.monthlyCap.toLocaleString()}` : "Add accounts to calculate"} />
-        <Metric label="5-hour utilization" value={`${Math.round(fiveHour.value * 100)}%`} detail={`${fiveHour.used.toFixed(1)} of ${fiveHour.cap.toFixed(0)} credits`} progress={fiveHour.value} />
-        <Metric label="Weekly utilization" value={`${Math.round(weekly.value * 100)}%`} detail={`${weekly.used.toFixed(1)} of ${weekly.cap.toFixed(0)} credits`} progress={weekly.value} />
-        <Metric label="Total tokens" value={compact(data.totals.totalTokens)} detail={`Input ${compact(data.totals.inputTokens)} · Output ${compact(data.totals.outputTokens)}`} />
-      </section>
-
-      <section className="overview-grid">
-        <article className="panel token-panel">
-          <PanelHeading title={data.trend.length < 2 ? "Token composition" : "Token flow"} caption={data.trend.length < 2 ? "Current provider totals" : "Changes between snapshots"} />
-          <AnalyticsBand data={data} />
-          <div className="token-chart"><TokenFlowChart points={data.trend} totals={data.totals} /></div>
-        </article>
-        <article className="panel windows-panel">
-          <PanelHeading title="Usage windows" caption="Across connected keys" />
-          <GlobalWindows accounts={data.accounts} />
-        </article>
+      <section className="panel usage-overview">
+        <header className="usage-overview__heading">
+          <div><h2>Usage overview</h2><span>Across {data.totals.connected} connected account{data.totals.connected === 1 ? "" : "s"}</span></div>
+          <small>5-hour resets {fiveHour.resetAt ? formatReset(fiveHour.resetAt) : "—"} · weekly {weekly.resetAt ? formatReset(weekly.resetAt) : "—"}</small>
+        </header>
+        <div className="usage-metrics">
+          <UsageMetric icon={Coins} label="Monthly credits left" value={`$${data.totals.monthlyRemaining.toLocaleString(undefined, { maximumFractionDigits: 2 })}`} detail={data.totals.monthlyCap ? `${Math.round((data.totals.monthlyRemaining / data.totals.monthlyCap) * 100)}% of $${data.totals.monthlyCap.toLocaleString()}` : "No active billing cap"} />
+          <UsageMetric icon={Gauge} label="5-hour utilization" value={`${Math.round(fiveHour.value * 100)}%`} detail={`${fiveHour.used.toFixed(1)} of ${fiveHour.cap.toFixed(0)} credits`} progress={fiveHour.value} />
+          <UsageMetric icon={CalendarClock} label="Weekly utilization" value={`${Math.round(weekly.value * 100)}%`} detail={`${weekly.used.toFixed(1)} of ${weekly.cap.toFixed(0)} credits`} progress={weekly.value} />
+          <UsageMetric icon={Activity} label="Total tokens" value={compact(data.totals.totalTokens)} detail={`Input ${compact(data.totals.inputTokens)} · Output ${compact(data.totals.outputTokens)}`} />
+        </div>
+        <div className="token-band">
+          <TokenFlowChart points={data.trend} totals={data.totals} />
+        </div>
+        <AnalyticsBand data={data} />
       </section>
 
       <section className="panel accounts-panel">
@@ -114,36 +112,6 @@ function PanelHeading({ title, caption }: { title: string; caption: string }) {
   return <header className="panel-heading"><h2>{title}</h2><span>{caption}</span></header>
 }
 
-function GlobalWindows({ accounts }: { accounts: AccountView[] }) {
-  const healthy = accounts.filter((account) => account.snapshot)
-  if (healthy.length === 0) return <div className="chart-empty chart-empty--compact"><strong>No live quota windows yet</strong><span>Add and refresh an account.</span></div>
-  const windowRows = ["fiveHour", "weekly"] as const
-  return (
-    <div className="global-windows">
-      {windowRows.map((name) => {
-        const aggregate = aggregateWindow(accounts, name)
-        return <WindowRow key={name} label={name === "fiveHour" ? "5-hour" : "Weekly"} used={aggregate.used} cap={aggregate.cap} value={aggregate.value} resetAt={aggregate.resetAt} />
-      })}
-      {(() => {
-        const cap = healthy.reduce((sum, account) => sum + (account.snapshot?.monthlyCap ?? 0), 0)
-        const remaining = healthy.reduce((sum, account) => sum + (account.snapshot?.monthlyRemaining ?? 0), 0)
-        const used = Math.max(0, cap - remaining)
-        return <WindowRow label="Monthly" used={used} cap={cap} value={cap > 0 ? used / cap : 0} />
-      })()}
-    </div>
-  )
-}
-
-function WindowRow({ label, used, cap, value, resetAt }: { label: string; used: number; cap: number; value: number; resetAt?: string | null }) {
-  return (
-    <div className="global-window">
-      <span><strong>{label}</strong><b>{Math.round(value * 100)}%</b></span>
-      <Progress value={value} tone={toneFor(value)} />
-      <small>{used.toFixed(1)} / {cap.toFixed(0)} credits{resetAt ? ` · resets ${formatReset(resetAt)}` : ""}</small>
-    </div>
-  )
-}
-
 function aggregateWindow(accounts: AccountView[], name: "fiveHour" | "weekly") {
   const rows = accounts.flatMap((account) => account.snapshot?.windows.filter((window) => window.name === name) ?? [])
   const used = rows.reduce((sum, row) => sum + row.used, 0)
@@ -165,14 +133,21 @@ function formatReset(value: string): string {
 
 function AnalyticsBand({ data }: { data: DashboardData }) {
   const rows = [
-    ["Input", compact(data.totals.inputTokens)],
-    ["Output", compact(data.totals.outputTokens)],
     ["Requests", data.totals.totalRequests.toLocaleString()],
     ["Provider cost", `$${data.totals.totalCost.toFixed(2)}`],
-    ["Success", data.totals.successRate === null ? "—" : `${(data.totals.successRate * 100).toFixed(1)}%`],
-    ["Cache hit", data.totals.cacheHitRate === null ? "Not observed" : `${Math.round(data.totals.cacheHitRate * 100)}%`],
+    ["Success rate", data.totals.successRate === null ? "—" : `${(data.totals.successRate * 100).toFixed(1)}%`],
+    ["Cache hit rate", data.totals.cacheHitRate === null ? "Not observed" : `${Math.round(data.totals.cacheHitRate * 100)}%`],
   ]
   return <div className="analytics-band">{rows.map(([label, value]) => <span key={label}><small>{label}</small><strong>{value}</strong></span>)}</div>
+}
+
+function UsageMetric({ icon: Icon, label, value, detail, progress }: { icon: typeof Activity; label: string; value: string; detail: string; progress?: number }) {
+  return (
+    <article className="usage-metric">
+      <span className="usage-metric__icon"><Icon size={18} /></span>
+      <div><small>{label}</small><strong>{value}</strong>{progress !== undefined && <Progress value={progress} tone={toneFor(progress)} />}<span>{detail}</span></div>
+    </article>
+  )
 }
 
 export function ConnectionBanner({ message, error }: { message: string; error?: boolean }) {
