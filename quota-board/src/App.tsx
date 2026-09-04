@@ -1,9 +1,10 @@
 import { Menu, Moon, Plus, RefreshCw, Sun, X } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { getDashboard, refreshAccount, refreshAll, removeAccount } from "./api"
+import { getAccountKey, getDashboard, refreshAccount, refreshAll, removeAccount } from "./api"
 import { AccountDetail } from "./components/AccountDetail"
 import { AddAccountModal } from "./components/AddAccountModal"
 import { navItems } from "./components/Icons"
+import { KeyCopyModal } from "./components/KeyCopyModal"
 import {
   AccountsPage,
   ConnectionBanner,
@@ -31,6 +32,8 @@ export function App() {
   const [mobileNav, setMobileNav] = useState(false)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<{ text: string; error?: boolean } | null>(null)
+  const [copyTarget, setCopyTarget] = useState<AccountView | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -100,6 +103,17 @@ export function App() {
     setSelectedId(account.id)
   }
 
+  async function copyKey(token: string) {
+    if (!copyTarget) return
+    const { apiKey } = await getAccountKey(copyTarget.id, token)
+    await navigator.clipboard.writeText(apiKey)
+    const copiedAccount = copyTarget
+    setCopyTarget(null)
+    setCopiedId(copiedAccount.id)
+    setNotice({ text: `${copiedAccount.label} API key copied` })
+    window.setTimeout(() => setCopiedId((value) => value === copiedAccount.id ? null : value), 1800)
+  }
+
   return (
     <div className={`app-shell ${selected ? "app-shell--detail" : ""}`}>
       <aside className={`sidebar ${mobileNav ? "sidebar--open" : ""}`}>
@@ -137,9 +151,9 @@ export function App() {
         <div className="content">
           {notice && <ConnectionBanner message={notice.text} error={notice.error} />}
           {!data ? <Loading /> : activeNav === "overview" ? (
-            <OverviewPage data={data} selectedId={selectedId} onSelect={chooseAccount} />
+            <OverviewPage data={data} selectedId={selectedId} onSelect={chooseAccount} onCopyKey={setCopyTarget} copiedId={copiedId} />
           ) : activeNav === "accounts" ? (
-            <AccountsPage data={data} selectedId={selectedId} onSelect={chooseAccount} />
+            <AccountsPage data={data} selectedId={selectedId} onSelect={chooseAccount} onCopyKey={setCopyTarget} copiedId={copiedId} />
           ) : activeNav === "models" ? (
             <ModelsPage data={data} />
           ) : activeNav === "requests" ? (
@@ -153,6 +167,7 @@ export function App() {
       {selected && <AccountDetail account={selected} onClose={() => setSelectedId(null)} onRefresh={refreshSelected} onRemove={removeSelected} />}
 
       {addOpen && <AddAccountModal onClose={() => setAddOpen(false)} onAdded={() => { setAddOpen(false); void load(); setNotice({ text: "Account connected" }) }} />}
+      {copyTarget && <KeyCopyModal account={copyTarget} onClose={() => setCopyTarget(null)} onConfirm={copyKey} />}
     </div>
   )
 }

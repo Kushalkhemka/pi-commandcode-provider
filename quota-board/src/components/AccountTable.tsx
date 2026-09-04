@@ -1,4 +1,4 @@
-import { ChevronDown, CircleDollarSign, MoreHorizontal } from "lucide-react"
+import { Check, ChevronDown, CircleDollarSign, Copy, MoreHorizontal } from "lucide-react"
 import type { AccountView } from "../types"
 import { Progress, toneFor } from "./Progress"
 
@@ -25,17 +25,21 @@ function avatarFor(account: AccountView): string {
   const seed = account.keyFingerprint
   let hash = 0
   for (const character of seed) hash = (hash * 31 + character.charCodeAt(0)) >>> 0
-  return `/avatars/avatar-${String((hash % 8) + 1).padStart(2, "0")}.svg`
+  return `/avatars/avatar-${String((hash % 50) + 1).padStart(2, "0")}.svg`
 }
 
 export function AccountTable({
   accounts,
   selectedId,
   onSelect,
+  onCopyKey,
+  copiedId,
 }: {
   accounts: AccountView[]
   selectedId: string | null
   onSelect: (account: AccountView) => void
+  onCopyKey: (account: AccountView) => void
+  copiedId: string | null
 }) {
   if (accounts.length === 0) {
     return (
@@ -64,16 +68,35 @@ export function AccountTable({
             ? account.snapshot.cacheReadTokens / cacheDenominator
             : null
         return (
-          <button
-            type="button"
+          <div
             className={`account-row ${selectedId === account.id ? "account-row--selected" : ""}`}
             key={account.id}
             onClick={() => onSelect(account)}
+            onKeyDown={(event) => {
+              if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return
+              event.preventDefault()
+              onSelect(account)
+            }}
             role="row"
+            tabIndex={0}
           >
             <span className="account-name">
               <img className="account-avatar" src={avatarFor(account)} alt="" />
-              <span><strong>{account.label}</strong><small>{account.email ?? account.emailMasked}</small></span>
+              <span>
+                <span className="account-name__title">
+                  <strong>{account.label}</strong>
+                  <button
+                    type="button"
+                    className={`copy-key ${copiedId === account.id ? "copy-key--done" : ""}`}
+                    onClick={(event) => { event.stopPropagation(); onCopyKey(account) }}
+                    aria-label={`Copy API key for ${account.label}`}
+                    title="Copy API key"
+                  >
+                    {copiedId === account.id ? <Check size={12} /> : <Copy size={12} />}
+                  </button>
+                </span>
+                <small>{account.email ?? account.emailMasked}</small>
+              </span>
             </span>
             <span>{planName(account.planId)}</span>
             <QuotaCell label="5-hour" used={five?.used} cap={five?.cap} resetAt={five?.resetAt} />
@@ -87,7 +110,7 @@ export function AccountTable({
             <span className={cacheRate === null ? "muted" : "positive"}>{cacheRate === null ? "Not observed" : `${Math.round(cacheRate * 100)}%`}</span>
             <span className={`status status--${account.status}`}><i />{account.status === "warning" ? "Near limit" : account.status}</span>
             <span className="row-more"><MoreHorizontal size={17} /><ChevronDown className="mobile-chevron" size={17} /></span>
-          </button>
+          </div>
         )
       })}
     </div>

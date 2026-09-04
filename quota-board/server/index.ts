@@ -1,4 +1,4 @@
-import { randomUUID, timingSafeEqual } from "node:crypto"
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto"
 import { fileURLToPath } from "node:url"
 import { dirname, join, resolve } from "node:path"
 import express from "express"
@@ -67,6 +67,17 @@ function findAccount(accounts: StoredAccount[], id: string): StoredAccount {
   const account = accounts.find((item) => item.id === id)
   if (!account) throw new AppError("Account not found", 404)
   return account
+}
+
+function constantTimeEqual(left: string, right: string): boolean {
+  return timingSafeEqual(createHash("sha256").update(left).digest(), createHash("sha256").update(right).digest())
+}
+
+function authorizeKeyExport(request: express.Request): "enabled" | "disabled" | "denied" {
+  const configured = process.env.QUOTA_BOARD_KEY_EXPORT_TOKEN
+  if (!configured) return "disabled"
+  const supplied = request.header("x-quota-board-key-export-token") ?? ""
+  return constantTimeEqual(supplied, configured) ? "enabled" : "denied"
 }
 
 function applySnapshot(
@@ -220,6 +231,24 @@ app.post("/api/accounts/:id/refresh", async (request, response, next) => {
   try {
     await refreshAccount(z.string().uuid().parse(request.params.id))
     response.json({ ok: true })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.post("/api/accounts/:id/key", async (request, response, next) => {
+  try {
+    const authorization = authorizeKeyExport(request)
+    if (authorization === "disabled") throw new AppError("API key copying is disabled on this server", 403)
+    if (authorization === "denied") throw new AppError("Invalid key export token", 401)
+    const id = z.string().uuid().parse(request.params.id)
+    const account = findAccount((await store.read()).accounts, id)
+    response.set({
+      "Cache-Control": "private, no-store, max-age=0",
+      Pragma: "no-cache",
+      "X-Content-Type-Options": "nosniff",
+    })
+    response.json({ apiKey: decryptSecret(account.encryptedKey, masterKey) })
   } catch (error) {
     next(error)
   }

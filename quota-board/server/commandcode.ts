@@ -70,6 +70,13 @@ export const ENDPOINTS: EndpointView[] = [
     stability: "board",
     data: ["model", "input", "output", "cache read", "cache write", "cost"],
   },
+  {
+    method: "POST",
+    path: "/api/accounts/:id/key",
+    purpose: "Operator-authorized, no-cache key export",
+    stability: "board",
+    data: ["API key"],
+  },
 ]
 
 function isRecord(value: unknown): value is Record<string, unknown> {

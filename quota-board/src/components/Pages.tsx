@@ -8,10 +8,14 @@ export function OverviewPage({
   data,
   selectedId,
   onSelect,
+  onCopyKey,
+  copiedId,
 }: {
   data: DashboardData
   selectedId: string | null
   onSelect: (account: AccountView) => void
+  onCopyKey: (account: AccountView) => void
+  copiedId: string | null
 }) {
   const fiveHour = aggregateWindow(data.accounts, "fiveHour")
   const weekly = aggregateWindow(data.accounts, "weekly")
@@ -36,17 +40,17 @@ export function OverviewPage({
 
       <section className="panel accounts-panel">
         <PanelHeading title="Accounts" caption={`${data.accounts.length} connected · ${data.totals.errors} failed`} />
-        <AccountTable accounts={data.accounts} selectedId={selectedId} onSelect={onSelect} />
+        <AccountTable accounts={data.accounts} selectedId={selectedId} onSelect={onSelect} onCopyKey={onCopyKey} copiedId={copiedId} />
       </section>
     </div>
   )
 }
 
-export function AccountsPage({ data, selectedId, onSelect }: { data: DashboardData; selectedId: string | null; onSelect: (account: AccountView) => void }) {
+export function AccountsPage({ data, selectedId, onSelect, onCopyKey, copiedId }: { data: DashboardData; selectedId: string | null; onSelect: (account: AccountView) => void; onCopyKey: (account: AccountView) => void; copiedId: string | null }) {
   return (
     <section className="panel page-panel">
       <PanelHeading title="Accounts" caption="Quota health and billing-cycle balances" />
-      <AccountTable accounts={data.accounts} selectedId={selectedId} onSelect={onSelect} />
+      <AccountTable accounts={data.accounts} selectedId={selectedId} onSelect={onSelect} onCopyKey={onCopyKey} copiedId={copiedId} />
     </section>
   )
 }
@@ -99,7 +103,7 @@ export function SettingsPage({ data }: { data: DashboardData }) {
       <aside className="panel boundary-panel">
         <ShieldCheck size={24} />
         <h3>Server-side key vault</h3>
-        <p>Keys are encrypted with AES-256-GCM and never returned to the browser. Files are written with owner-only permissions.</p>
+        <p>Keys are encrypted with AES-256-GCM and excluded from normal dashboard data. Operator-authorized copying uses a separate no-cache request.</p>
         <Database size={24} />
         <h3>Honest analytics</h3>
         <p>Input/output totals are available immediately. Cache and model charts show only observed telemetry—not estimates.</p>

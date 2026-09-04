@@ -2,7 +2,7 @@
 
 A local-first operations dashboard for monitoring CommandCode quotas across many API keys. Paste a key, verify the associated account, and compare 5-hour, weekly, and monthly usage across the whole fleet or one account at a time.
 
-The board is built for teams managing roughly 5–100 CommandCode accounts. API keys stay on the server, are encrypted at rest, and are never returned to the browser.
+The board is built for teams managing roughly 5–100 CommandCode accounts. API keys stay encrypted on the server and are excluded from normal dashboard responses. An operator can explicitly copy one through a separately protected, no-cache export route.
 
 ![CommandCode Quota Board in pure-black mode](./design/implementation-desktop-dark.png)
 
@@ -17,6 +17,8 @@ The board is built for teams managing roughly 5–100 CommandCode accounts. API 
 - Concurrent bulk refreshes with per-account failure isolation
 - Pure-black dark mode and a high-contrast light mode
 - Responsive account table and full mobile workflow
+- 50 bundled profile avatars, assigned deterministically from each key fingerprint
+- Operator-confirmed API key copying without exposing keys in the dashboard payload
 - In-product endpoint inventory showing each data source and its stability
 
 ## Quick start
@@ -91,7 +93,8 @@ The local JSON vault is stored under `data/` and ignored by Git.
 - API keys use AES-256-GCM authenticated encryption.
 - A random 32-byte master key is created at `data/.master-key` with mode `0600` when no key is configured.
 - Set `QUOTA_BOARD_MASTER_KEY` to a 64-character hex value or base64-encoded 32-byte value to manage the key yourself.
-- The API returns only a short SHA-256 fingerprint, never the original key or ciphertext.
+- Normal dashboard APIs return only a short SHA-256 fingerprint, never the original key or ciphertext.
+- On-demand key copying is disabled unless `QUOTA_BOARD_KEY_EXPORT_TOKEN` is configured. The export is an authenticated `POST` response marked `no-store`.
 - Data writes are serialized, atomic, and owner-readable only.
 
 See [`.env.example`](./.env.example) for all configuration options. Do not expose the server directly to the public internet without adding authentication and TLS at a trusted reverse proxy.
@@ -106,6 +109,7 @@ See [`.env.example`](./.env.example) for all configuration options. Do not expos
 | `POST`   | `/api/accounts/verify`      | Validate a key without storing it    |
 | `POST`   | `/api/accounts`             | Encrypt and connect an account       |
 | `POST`   | `/api/accounts/:id/refresh` | Refresh one account                  |
+| `POST`   | `/api/accounts/:id/key`     | Copy one key after operator unlock   |
 | `POST`   | `/api/refresh`              | Refresh all accounts, four at a time |
 | `DELETE` | `/api/accounts/:id`         | Remove one key and its local history |
 | `POST`   | `/api/telemetry`            | Ingest model and cache usage         |
@@ -117,6 +121,8 @@ npm run check
 ```
 
 This runs the vault and analytics tests, TypeScript validation, and the production build.
+
+The bundled account art can be regenerated with `npm run sync:avatars`. It uses deterministic local SVG variants of [DiceBear Notionists](https://www.dicebear.com/styles/notionists/), distributed under CC0.
 
 ## Design references
 

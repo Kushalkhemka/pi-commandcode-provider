@@ -280,11 +280,16 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .account-row { width: 100%; min-height: 62px; border: 0; border-bottom: 1px solid var(--line-soft); background: transparent; color: var(--ink); font-size: 10px; text-align: left; cursor: pointer; }
 .account-row:last-child { border-bottom: 0; }
 .account-row:hover, .account-row--selected { background: var(--surface-hover); }
+.account-row:focus-visible { outline: 1px solid var(--accent); outline-offset: -2px; }
 .account-name { display: flex; align-items: center; gap: 9px; min-width: 0; }
 .account-name > span { min-width: 0; display: grid; gap: 3px; }
+.account-name__title { min-width: 0; display: flex; align-items: center; gap: 5px; }
 .account-name strong { overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 500; white-space: nowrap; }
 .account-name small { overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-size: 10px; white-space: nowrap; }
 .account-avatar { width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-hover); object-fit: cover; }
+.copy-key { width: 22px; height: 22px; flex: 0 0 auto; display: grid; place-items: center; padding: 0; border: 0; border-radius: 5px; color: var(--muted); background: transparent; cursor: pointer; opacity: .72; }
+.copy-key:hover, .copy-key:focus-visible { color: var(--ink); background: var(--surface-hover); opacity: 1; outline: none; }
+.copy-key--done { color: var(--mint); opacity: 1; }
 .quota-cell { min-width: 0; display: grid; gap: 4px; }
 .quota-cell strong { font: 500 10px "IBM Plex Mono"; }
 .quota-cell small { color: var(--muted); font: 400 10px "IBM Plex Mono"; }
@@ -374,6 +379,10 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .checkbox-row input { accent-color: var(--accent); }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
 .account-modal footer { display: flex; align-items: center; gap: 6px; margin: 18px -24px -24px; padding: 13px 24px; color: var(--muted); background: var(--canvas); border-top: 1px solid var(--line); font-size: 8px; }
+.key-copy-modal { width: min(400px, 100%); }
+.key-copy-modal__icon { width: 34px; height: 34px; display: grid; place-items: center; margin-bottom: 16px; border: 1px solid var(--line); border-radius: 8px; color: var(--mint); background: var(--surface-hover); }
+.key-copy-modal p strong { color: var(--ink); font-weight: 500; }
+.key-copy-modal form label { display: grid; gap: 7px; color: var(--ink); font-size: 9px; font-weight: 500; }
 .verification-card { margin-top: 17px; border: 1px solid color-mix(in srgb, var(--mint) 35%, var(--line)); border-radius: 6px; overflow: hidden; }
 .verification-card > header { display: flex; align-items: center; gap: 7px; padding: 10px; color: var(--mint); border-bottom: 1px solid var(--line); font-size: 9px; font-weight: 500; }
 .verification-card > div { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 20px; padding: 12px; }

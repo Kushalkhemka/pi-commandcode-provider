@@ -49,6 +49,13 @@ export function refreshAccount(id: string): Promise<void> {
   return request(`/api/accounts/${id}/refresh`, { method: "POST" })
 }
 
+export function getAccountKey(id: string, exportToken: string): Promise<{ apiKey: string }> {
+  return request(`/api/accounts/${id}/key`, {
+    method: "POST",
+    headers: { "x-quota-board-key-export-token": exportToken },
+  })
+}
+
 export function removeAccount(id: string): Promise<void> {
   return request(`/api/accounts/${id}`, { method: "DELETE" })
 }
