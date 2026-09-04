@@ -49,7 +49,7 @@ const EXPECTED_MODELS: readonly CommandCodeModel[] = [
     api: "openai-completions",
     reasoning: true,
     contextWindow: 1_000_000,
-    maxTokens: 65_536,
+    maxTokens: 64_000,
   },
 ]
 
@@ -182,7 +182,7 @@ describe("commandCodeModelsFromApiResponse()", () => {
 
     assert.deepEqual(
       models.map(({ maxTokens }) => maxTokens),
-      [limit, Math.floor(limit / 2), 65_536, 8_192],
+      [limit, Math.floor(limit / 2), 64_000, 8_192],
     )
   })
 
@@ -196,9 +196,8 @@ describe("commandCodeModelsFromApiResponse()", () => {
     }
   })
 
-  it("merges manual effort overrides over the generated catalog", () => {
+  it("merges only non-upstream manual effort overrides over the generated catalog", () => {
     const validEfforts = new Set(["minimal", "low", "medium", "high", "xhigh", "max"])
-    assert.ok(Object.keys(MODEL_EFFORT_OVERRIDES).length > 0)
     for (const [modelId, efforts] of Object.entries(MODEL_EFFORT_OVERRIDES)) {
       assert.equal(MODEL_REASONING[modelId], true, `${modelId} override needs a reasoning flag`)
       assert.equal(

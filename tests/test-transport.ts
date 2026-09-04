@@ -66,6 +66,7 @@ describe("Command Code transport router", () => {
     let providerCalls = 0
     let generateCalls = 0
     const router = createCommandCodeTransportRouter({
+      allowLegacyGenerate: true,
       createStream: createTestEventStream,
       streamProvider: (_model, _context, options) => {
         providerCalls += 1
@@ -97,6 +98,7 @@ describe("Command Code transport router", () => {
       error: { code: "upgrade_required", type: "permission_error" },
     })
     const router = createCommandCodeTransportRouter({
+      allowLegacyGenerate: true,
       createStream: createTestEventStream,
       streamProvider: (_model, _context, options) => {
         providerCalls += 1
@@ -126,6 +128,7 @@ describe("Command Code transport router", () => {
     let generateCalls = 0
     const upgradeBody = JSON.stringify({ error: { code: "upgrade_required" } })
     const router = createCommandCodeTransportRouter({
+      allowLegacyGenerate: true,
       createStream: createTestEventStream,
       streamProvider: (_model, _context, options) => {
         providerCalls += 1
@@ -168,6 +171,7 @@ describe("Command Code transport router", () => {
     let generateCalls = 0
     const upgradeBody = JSON.stringify({ error: { code: "upgrade_required" } })
     const router = createCommandCodeTransportRouter({
+      allowLegacyGenerate: true,
       createStream: createTestEventStream,
       streamProvider: (_model, _context, options) => {
         providerCalls += 1
@@ -227,6 +231,7 @@ describe("Command Code transport router", () => {
     let generateCalls = 0
     const responseBody = JSON.stringify({ error: { code: "permission_denied" } })
     const router = createCommandCodeTransportRouter({
+      allowLegacyGenerate: true,
       createStream: createTestEventStream,
       streamProvider: (_model, _context, options) =>
         providerStream(new Response(responseBody, { status: 403 }), "blocked", options),
@@ -243,5 +248,57 @@ describe("Command Code transport router", () => {
 
     assert.equal(router.getTransport(), "provider")
     assert.equal(generateCalls, 0)
+  })
+
+  it("keeps undocumented legacy fallback disabled by default", async () => {
+    let generateCalls = 0
+    const responseBody = JSON.stringify({
+      error: { code: "upgrade_required", type: "permission_error" },
+    })
+    const router = createCommandCodeTransportRouter({
+      createStream: createTestEventStream,
+      streamProvider: (_model, _context, options) =>
+        providerStream(new Response(responseBody, { status: 403 }), "blocked", options),
+      streamGenerate: () => {
+        generateCalls += 1
+        return completedStream("generate")
+      },
+    })
+
+    await collectEvents(
+      router.stream(makeModel(), makeContext(), {
+        fetch: () => Promise.resolve(new Response(responseBody, { status: 403 })),
+      }),
+    )
+
+    assert.equal(router.getTransport(), "provider")
+    assert.equal(generateCalls, 0)
+  })
+
+  it("recognizes the documented Anthropic permission-error envelope when opted in", async () => {
+    let generateCalls = 0
+    const responseBody = JSON.stringify({
+      type: "error",
+      error: { type: "permission_error", message: "Provider API upgrade required" },
+    })
+    const router = createCommandCodeTransportRouter({
+      allowLegacyGenerate: true,
+      createStream: createTestEventStream,
+      streamProvider: (_model, _context, options) =>
+        providerStream(new Response(responseBody, { status: 403 }), "blocked", options),
+      streamGenerate: () => {
+        generateCalls += 1
+        return completedStream("generate")
+      },
+    })
+
+    await collectEvents(
+      router.stream(makeModel(), makeContext(), {
+        fetch: () => Promise.resolve(new Response(responseBody, { status: 403 })),
+      }),
+    )
+
+    assert.equal(router.getTransport(), "generate")
+    assert.equal(generateCalls, 1)
   })
 })

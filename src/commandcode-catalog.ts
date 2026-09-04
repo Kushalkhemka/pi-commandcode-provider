@@ -1,10 +1,10 @@
-export const COMMAND_CODE_CLI_VERSION = "1.44.0"
+export const COMMAND_CODE_CLI_VERSION = "1.47.0"
 
 export type CommandCodeInputType = "text" | "image"
 export type CommandCodeReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max"
 
 /**
- * Generated from command-code@1.44.0 by `npm run sync:commandcode-catalog`.
+ * Generated from command-code@1.47.0 by `npm run sync:commandcode-catalog`.
  * Do not edit manually.
  */
 export const MODEL_INPUT_MODALITIES: Readonly<Record<string, readonly CommandCodeInputType[]>> = {
@@ -53,6 +53,7 @@ export const MODEL_INPUT_MODALITIES: Readonly<Record<string, readonly CommandCod
   "thinkingmachines/inkling": ["text", "image"],
   "thinkingmachines/inkling-small": ["text", "image"],
   "xai/grok-4.5": ["text", "image"],
+  "xai/grok-4.6": ["text", "image"],
   "xiaomi/mimo-v2.5": ["text", "image"],
   "z-ai/glm-5.3-flash": ["text", "image"],
 }
@@ -142,6 +143,11 @@ export const MODEL_EFFORTS: Readonly<Record<string, readonly CommandCodeReasonin
   "gpt-5.6-luna": ["low", "medium", "high", "xhigh", "max"],
   "gpt-5.6-sol": ["low", "medium", "high", "xhigh", "max"],
   "gpt-5.6-terra": ["low", "medium", "high", "xhigh", "max"],
+  "meta/muse-spark-1.1": ["low", "medium", "high", "xhigh"],
+  "meta/muse-spark-1.2": ["low", "medium", "high", "xhigh"],
+  "meta/muse-spark-1.2-contributor": ["low", "medium", "high", "xhigh"],
+  "meta/muse-spark-1.3": ["low", "medium", "high", "xhigh"],
+  "meta/muse-spark-1.3-contributor": ["low", "medium", "high", "xhigh"],
   "moonshotai/Kimi-K3": ["low", "high", "max"],
   "Qwen/Qwen3.8-27B": ["low", "medium", "xhigh"],
   "Qwen/Qwen3.8-Flash": ["low", "medium", "xhigh"],

@@ -126,6 +126,63 @@ describe("streamCommandCode — auth", () => {
 })
 
 describe("streamCommandCode — successful streams", () => {
+  it("continues pause_turn responses and accumulates their content and usage", async () => {
+    server.mockResponseQueue([
+      {
+        type: "success",
+        events: [
+          JSON.stringify({ type: "text-delta", text: "Hello " }),
+          JSON.stringify({
+            type: "finish",
+            finishReason: "stop",
+            rawFinishReason: "pause_turn",
+            totalUsage: {
+              inputTokens: 10,
+              outputTokens: 2,
+              inputTokenDetails: { noCacheTokens: 10 },
+            },
+          }),
+        ],
+      },
+      {
+        type: "success",
+        events: [
+          JSON.stringify({ type: "text-delta", text: "world" }),
+          JSON.stringify({
+            type: "finish",
+            finishReason: "stop",
+            rawFinishReason: "end_turn",
+            totalUsage: {
+              inputTokens: 1,
+              outputTokens: 1,
+              inputTokenDetails: { noCacheTokens: 1 },
+            },
+          }),
+        ],
+      },
+    ])
+    const { streamCommandCode } = createTestDeps({ apiBase: server.baseUrl() })
+
+    const events = await collectEvents(
+      streamCommandCode(makeModel(), makeContext(), { apiKey: "mock-key" }),
+    )
+
+    const done = events.at(-1)
+    assert.equal(server.requestCount(), 2)
+    assert.equal(done?.type, "done")
+    if (done?.type !== "done") throw new Error("expected done")
+    assert.equal(
+      done.message.content
+        .filter((block) => block.type === "text")
+        .map((block) => block.text)
+        .join(""),
+      "Hello world",
+    )
+    assert.equal(done.message.usage.input, 11)
+    assert.equal(done.message.usage.output, 3)
+    assert.equal(done.message.usage.totalTokens, 14)
+  })
+
   it("emits start → text events → done and accumulates usage", async () => {
     server.mockResponse({
       type: "success",

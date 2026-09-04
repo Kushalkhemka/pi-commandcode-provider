@@ -143,7 +143,7 @@ jobs:
       - name: Check if dependency graph is enabled
         run: |
           echo "Dependency review requires enabling Dependency graph in repo settings."
-          echo "Go to: https://github.com/patlux/pi-commandcode-provider/settings/security_analysis"
+          echo "Go to: https://github.com/Kushalkhemka/pi-commandcode-provider/settings/security_analysis"
           echo "Enable: Dependency graph"
       - uses: actions/dependency-review-action@v4
         with:

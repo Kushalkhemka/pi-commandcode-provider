@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+## 1.0.0 - 2026-09-04
+
+- Publish the maintained fork as `@kushalkhemka/pi-commandcode-provider` with Pi-first documentation, package metadata, and release verification.
+- Keep the documented Provider API as the default transport and require explicit `COMMANDCODE_ENABLE_LEGACY_GO=1` opt-in before using the unsupported `/alpha/generate` fallback.
+- Add CommandCode-compatible `prompt_cache_key` routing for OpenAI-compatible requests, preserving caller payload hooks and Pi's cache-disable setting.
+- Continue legacy `pause_turn` streams for up to five follow-up requests while accumulating content, token usage, and cost instead of returning partial output as a successful turn.
+- Recognize both OpenAI-style and Anthropic-style Provider API upgrade errors when legacy Go mode is explicitly enabled.
+- Synchronize image, reasoning, effort, and output-limit metadata with `command-code@1.47.0`, including Grok 4.6 image input.
+- Match the CommandCode CLI's 64,000-token provider default output limit.
+- Add reviewed pricing for Qwen 3.8 Max 0902, Gemini 3.8 Flash, LongCat 2.0 Free, Muse Spark 1.3, and Muse Spark 1.3 Contributor.
+- Add a live-catalog compatibility check that fails when a CommandCode model lacks an explicit pricing entry or reviewed fixture.
+- Expand unit and real-Pi integration coverage for prompt caching, catalog drift, transport policy, error envelopes, and continuation streaming.
+
+### Breaking changes
+
+- The npm package name is now `@kushalkhemka/pi-commandcode-provider`.
+- Automatic fallback to CommandCode's undocumented Go transport is disabled by default.
+
+### Contributors
+
+- @Kushalkhemka — compatibility audit, implementation, validation, documentation, and release maintenance.
+
 ## 0.6.4 - 2026-09-03
 
 - Refresh the generated Command Code capability catalog from `command-code@1.40.1` to `command-code@1.44.0`, adding current image-input, reasoning, effort, and output-limit metadata for newly published models.

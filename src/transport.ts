@@ -9,6 +9,8 @@ import type {
 export type CommandCodeTransport = "unknown" | "provider" | "generate"
 
 interface TransportDependencies {
+  /** Enable the undocumented legacy Go-plan transport. Disabled by default. */
+  allowLegacyGenerate?: boolean
   createStream: () => AssistantMessageEventStreamLike
   streamProvider: (
     model: ModelLike,
@@ -33,7 +35,13 @@ async function isUpgradeRequired(response: Response): Promise<boolean> {
     const body: unknown = await response.clone().json()
     if (!isRecord(body)) return false
     const error = isRecord(body.error) ? body.error : body
-    return error.code === "upgrade_required"
+    if (error.code === "upgrade_required") return true
+
+    // Anthropic-compatible errors use `type` and `message` instead of the
+    // OpenAI-style `code` field documented by the chat-completions route.
+    const type = typeof error.type === "string" ? error.type : ""
+    const message = typeof error.message === "string" ? error.message : ""
+    return type === "permission_error" && /(?:upgrade|required|provider api)/i.test(message)
   } catch {
     return false
   }
@@ -81,7 +89,9 @@ export function createCommandCodeTransportRouter(deps: TransportDependencies) {
         ...options,
         fetch: async (input, init) => {
           const response = await fetchImpl(input, init)
-          if (await isUpgradeRequired(response)) upgradeRequired = true
+          if (deps.allowLegacyGenerate && (await isUpgradeRequired(response))) {
+            upgradeRequired = true
+          }
           return response
         },
         onResponse: async (response, responseModel) => {

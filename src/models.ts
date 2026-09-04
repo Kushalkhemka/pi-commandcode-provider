@@ -24,7 +24,9 @@ export const DEFAULT_PROVIDER_API_BASE = "https://api.commandcode.ai/provider/v1
 export const DEFAULT_MODELS_URL = `${DEFAULT_PROVIDER_API_BASE}/models`
 export const DEFAULT_MODELS_TIMEOUT_MS = 10_000
 
-const DEFAULT_MAX_OUTPUT_TOKENS = 65_536
+// Match the Command Code CLI's provider-wide default. Model-specific catalog
+// limits still override this when they are lower.
+const DEFAULT_MAX_OUTPUT_TOKENS = 64_000
 const MODEL_CACHE_VERSION = 1
 
 export type CommandCodeApi = "openai-completions" | "anthropic-messages"

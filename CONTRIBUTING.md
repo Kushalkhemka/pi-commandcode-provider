@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve `pi-commandcode-provider`.
+Thanks for helping improve `@kushalkhemka/pi-commandcode-provider`.
 
 This is an unofficial Command Code provider for pi. Keep changes small, tested, and easy to review.
 
@@ -116,7 +116,7 @@ feat(auth): support Command Code CLI auth files
 fix(core): cap max tokens by selected model
 docs(release): document npm smoke testing
 test(stream): cover reasoning start events
-chore(release): publish 0.1.1
+chore(release): publish 1.0.0
 ```
 
 ### Types

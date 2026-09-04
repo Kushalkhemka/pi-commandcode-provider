@@ -36,6 +36,7 @@ import {
 import { getApiKey as getOAuthApiKey, login, refreshToken } from "./src/oauth.ts"
 import { normalizeCommandCodeMessage } from "./src/overflow.ts"
 import { MODEL_COSTS, ZERO_MODEL_COST } from "./src/pricing.ts"
+import { withCommandCodePromptCache } from "./src/prompt-cache.ts"
 import { registerCommandCodeQuota } from "./src/quota-command.ts"
 import { createCommandCodeRuntime } from "./src/runtime.ts"
 import { createCommandCodeTransportRouter } from "./src/transport.ts"
@@ -164,8 +165,13 @@ export default async function (pi: ExtensionAPI) {
     apiBase: legacyApiBase(apiBase),
   })
   const resolveStreamOptions = (options?: Parameters<typeof streamNativeProvider>[2]) =>
-    withResolvedCommandCodeApiKey(options, getConfiguredApiKey())
+    withCommandCodePromptCache(
+      withResolvedCommandCodeApiKey(options, getConfiguredApiKey()) as Parameters<
+        typeof withCommandCodePromptCache
+      >[0],
+    ) as Parameters<typeof streamNativeProvider>[2]
   const transport = createCommandCodeTransportRouter({
+    allowLegacyGenerate: process.env.COMMANDCODE_ENABLE_LEGACY_GO === "1",
     createStream: () => new AssistantMessageEventStream(),
     streamProvider: (model, context, options) =>
       streamNativeProvider(

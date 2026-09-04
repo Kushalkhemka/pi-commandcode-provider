@@ -843,6 +843,9 @@ try {
   assert.equal(lastRequestHeaders["x-cmd-zdr"], "1")
   assert.equal(lastRequestBody?.model, TEST_MODEL)
   assert.equal(lastRequestBody?.reasoning_effort, "high")
+  assert.equal(typeof lastRequestBody?.prompt_cache_key, "string")
+  assert.ok(lastRequestBody.prompt_cache_key.length > 0)
+  assert.ok(lastRequestBody.prompt_cache_key.length <= 64)
   const sentTools = lastRequestBody?.tools
   assert.ok(Array.isArray(sentTools) && sentTools.length > 0)
   const editTool = sentTools.find((tool) => tool.function?.name === "edit")
