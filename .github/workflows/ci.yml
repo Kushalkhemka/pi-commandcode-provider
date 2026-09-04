@@ -69,6 +69,9 @@ jobs:
       - name: Run OMP compatibility suite
         env:
           OMP_COMPAT_REQUIRED: "1"
+          # The compatibility fixture explicitly exercises the legacy path;
+          # production Pi installs keep it disabled by default.
+          COMMANDCODE_ENABLE_LEGACY_GO: "1"
         run: node tests/test-omp-compat.mjs
 
   # ──────────────────────────────────────────────────────────
