@@ -117,7 +117,7 @@ export function App() {
   return (
     <div className={`app-shell ${selected ? "app-shell--detail" : ""}`}>
       <aside className={`sidebar ${mobileNav ? "sidebar--open" : ""}`}>
-        <div className="sidebar-brand"><img className="brand-mark" src="/commandcode-symbol.svg" alt="CommandCode" /><span>CommandCode</span></div>
+        <div className="sidebar-brand"><img className="brand-mark" src="/opensec-mark.png" alt="OpenSec" /><span>CommandCode</span></div>
         <button className="mobile-close" onClick={() => setMobileNav(false)} aria-label="Close navigation"><X size={20} /></button>
         <nav>
           {navItems.map(({ id, label, icon: Icon }) => (
@@ -130,7 +130,7 @@ export function App() {
       <main className="main-column">
         <header className="topbar">
           <button className="mobile-menu" onClick={() => setMobileNav(true)} aria-label="Open navigation"><Menu size={22} /></button>
-          <img className="mobile-brand" src="/commandcode-symbol.svg" alt="" />
+          <img className="mobile-brand" src="/opensec-mark.png" alt="OpenSec" />
           <div className="topbar__title"><h1>Quota Board</h1></div>
           <div className="topbar__actions">
             <span className="last-sync">Last updated: {data ? new Date(data.generatedAt).toLocaleTimeString() : "—"}<i /></span>

@@ -82,9 +82,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
   width: 34px;
   height: 34px;
   display: block;
-  background: var(--ink-strong);
-  border-radius: 8px;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .sidebar nav { display: grid; gap: 3px; }
@@ -441,7 +439,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
   .topbar { height: 56px; padding: 0 14px; }
   .topbar h1 { font-size: 12px; }
   .mobile-menu { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; background: transparent; color: var(--ink); }
-  .mobile-brand { display: block; width: 24px; height: 24px; border-radius: 6px; object-fit: cover; }
+  .mobile-brand { display: block; width: 24px; height: 24px; object-fit: contain; }
   .topbar__actions .text-button, .topbar__actions .button--primary { display: none; }
   .theme-toggle { width: 30px; height: 30px; }
   .range-row { padding: 19px 14px 12px; }
