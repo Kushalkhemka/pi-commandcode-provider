@@ -786,6 +786,12 @@ export function createStreamCommandCode(deps: CoreDependencies) {
               continue retryLoop
             }
 
+            if (pauseTurn) {
+              throw new Error(
+                `Provider requested more than ${MAX_PAUSE_CONTINUATIONS} pause_turn continuations`,
+              )
+            }
+
             stream.push({
               type: "done",
               reason: successStopReason(output.stopReason),

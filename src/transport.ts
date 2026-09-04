@@ -41,7 +41,10 @@ async function isUpgradeRequired(response: Response): Promise<boolean> {
     // OpenAI-style `code` field documented by the chat-completions route.
     const type = typeof error.type === "string" ? error.type : ""
     const message = typeof error.message === "string" ? error.message : ""
-    return type === "permission_error" && /(?:upgrade|required|provider api)/i.test(message)
+    return (
+      type === "permission_error" &&
+      /\bprovider api (?:access )?upgrade (?:is )?required\b/i.test(message)
+    )
   } catch {
     return false
   }

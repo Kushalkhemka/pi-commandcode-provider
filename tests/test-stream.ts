@@ -183,6 +183,32 @@ describe("streamCommandCode — successful streams", () => {
     assert.equal(done.message.usage.totalTokens, 14)
   })
 
+  it("reports an error when pause_turn exceeds the continuation limit", async () => {
+    server.mockResponseQueue(
+      Array.from({ length: 6 }, () => ({
+        type: "success" as const,
+        events: [
+          JSON.stringify({
+            type: "finish",
+            finishReason: "stop",
+            rawFinishReason: "pause_turn",
+          }),
+        ],
+      })),
+    )
+    const { streamCommandCode } = createTestDeps({ apiBase: server.baseUrl() })
+
+    const events = await collectEvents(
+      streamCommandCode(makeModel(), makeContext(), { apiKey: "mock-key" }),
+    )
+
+    const error = events.at(-1)
+    assert.equal(server.requestCount(), 6)
+    assert.equal(error?.type, "error")
+    if (error?.type !== "error") throw new Error("expected error")
+    assert.match(error.error.errorMessage ?? "", /more than 5 pause_turn continuations/)
+  })
+
   it("emits start → text events → done and accumulates usage", async () => {
     server.mockResponse({
       type: "success",

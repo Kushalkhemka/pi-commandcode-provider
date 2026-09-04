@@ -250,6 +250,35 @@ describe("Command Code transport router", () => {
     assert.equal(generateCalls, 0)
   })
 
+  it("preserves model-level permission errors that merely say required", async () => {
+    let generateCalls = 0
+    const responseBody = JSON.stringify({
+      error: {
+        type: "permission_error",
+        message: "Additional permission required for this model",
+      },
+    })
+    const router = createCommandCodeTransportRouter({
+      allowLegacyGenerate: true,
+      createStream: createTestEventStream,
+      streamProvider: (_model, _context, options) =>
+        providerStream(new Response(responseBody, { status: 403 }), "blocked", options),
+      streamGenerate: () => {
+        generateCalls += 1
+        return completedStream("generate")
+      },
+    })
+
+    await collectEvents(
+      router.stream(makeModel(), makeContext(), {
+        fetch: () => Promise.resolve(new Response(responseBody, { status: 403 })),
+      }),
+    )
+
+    assert.equal(router.getTransport(), "provider")
+    assert.equal(generateCalls, 0)
+  })
+
   it("keeps undocumented legacy fallback disabled by default", async () => {
     let generateCalls = 0
     const responseBody = JSON.stringify({

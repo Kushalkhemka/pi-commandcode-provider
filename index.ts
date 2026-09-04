@@ -17,7 +17,7 @@ import {
 import { join } from "node:path"
 
 import { getConfiguredApiKey } from "./src/api-key.ts"
-import { pickCommandCodeApiKey, withResolvedCommandCodeApiKey } from "./src/converters.ts"
+import { pickCommandCodeApiKey } from "./src/converters.ts"
 import { createStreamCommandCode } from "./src/core.ts"
 import { calculateCommandCodeCost } from "./src/cost.ts"
 import {
@@ -164,12 +164,13 @@ export default async function (pi: ExtensionAPI) {
     calculateCost: calculateCommandCodeCost,
     apiBase: legacyApiBase(apiBase),
   })
-  const resolveStreamOptions = (options?: Parameters<typeof streamNativeProvider>[2]) =>
-    withCommandCodePromptCache(
-      withResolvedCommandCodeApiKey(options, getConfiguredApiKey()) as Parameters<
-        typeof withCommandCodePromptCache
-      >[0],
-    ) as Parameters<typeof streamNativeProvider>[2]
+  const resolveStreamOptions = (
+    options?: Parameters<typeof streamNativeProvider>[2],
+  ): Parameters<typeof streamNativeProvider>[2] => {
+    const apiKey = pickCommandCodeApiKey(options?.apiKey, getConfiguredApiKey())
+    const resolved = options && apiKey === options.apiKey ? options : { ...options, apiKey }
+    return withCommandCodePromptCache(resolved)
+  }
   const transport = createCommandCodeTransportRouter({
     allowLegacyGenerate: process.env.COMMANDCODE_ENABLE_LEGACY_GO === "1",
     createStream: () => new AssistantMessageEventStream(),
