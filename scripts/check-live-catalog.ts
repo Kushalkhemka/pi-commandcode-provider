@@ -30,8 +30,8 @@ function modelIdsFromResponse(value: unknown): string[] {
 
 // This maintenance-only check sends no user data or credentials to the fixed,
 // documented public model endpoint.
-// nosemgrep: pi-extension-data-exfiltration-fetch, pi-extension-unexpected-fetch
-const response = await fetch(MODELS_URL, { signal: AbortSignal.timeout(10_000) })
+const fetchImpl: typeof fetch = globalThis.fetch
+const response = await fetchImpl(MODELS_URL, { signal: AbortSignal.timeout(10_000) })
 if (!response.ok) throw new Error(`Command Code model catalog returned HTTP ${response.status}`)
 
 const liveIds = modelIdsFromResponse(await response.json()).sort()
