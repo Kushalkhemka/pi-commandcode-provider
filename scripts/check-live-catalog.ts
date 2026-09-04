@@ -10,8 +10,14 @@ interface CatalogFixture {
 }
 
 function modelIdsFromResponse(value: unknown): string[] {
-  if (typeof value !== "object" || value === null || !("data" in value)) {
-    throw new Error("Command Code model response has no data array")
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    !("object" in value) ||
+    value.object !== "list" ||
+    !("data" in value)
+  ) {
+    throw new Error("Command Code model response is not a model list")
   }
   const data = (value as { data?: unknown }).data
   if (!Array.isArray(data)) throw new Error("Command Code model response data is not an array")

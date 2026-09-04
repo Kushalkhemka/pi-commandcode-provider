@@ -780,6 +780,9 @@ export function createStreamCommandCode(deps: CoreDependencies) {
               } catch {}
               reader = undefined
 
+              // Match command-code@1.47.0's hosted transport: the stable
+              // threadId resumes server-side state, so the original body is
+              // intentionally repeated rather than appending partial output.
               // Continuations are successful follow-up requests, not retries.
               // Reset the transient retry budget to match Command Code CLI.
               attempt = -1

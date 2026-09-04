@@ -18,6 +18,7 @@ import {
   getModelsTimeoutMs,
   inputModalitiesForModel,
   loadCommandCodeModels,
+  mergeModelEfforts,
   MODEL_EFFORTS,
   MODEL_INPUT_MODALITIES,
   MODEL_MAX_OUTPUT_TOKENS,
@@ -198,6 +199,10 @@ describe("commandCodeModelsFromApiResponse()", () => {
 
   it("merges only non-upstream manual effort overrides over the generated catalog", () => {
     const validEfforts = new Set(["minimal", "low", "medium", "high", "xhigh", "max"])
+    assert.deepEqual(
+      mergeModelEfforts({ model: ["low"] }, { model: ["high"], added: ["minimal"] }),
+      { model: ["high"], added: ["minimal"] },
+    )
     for (const [modelId, efforts] of Object.entries(MODEL_EFFORT_OVERRIDES)) {
       assert.equal(MODEL_REASONING[modelId], true, `${modelId} override needs a reasoning flag`)
       assert.equal(

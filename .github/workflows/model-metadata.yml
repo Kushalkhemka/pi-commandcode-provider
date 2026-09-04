@@ -6,10 +6,17 @@ on:
     paths:
       - ".github/scripts/check-commandcode-model-metadata.ts"
       - ".github/workflows/model-metadata.yml"
+      - "scripts/check-live-catalog.ts"
       - "src/commandcode-catalog.ts"
+      - "src/commandcode-catalog-overrides.ts"
       - "src/core.ts"
       - "src/models.ts"
+      - "src/pricing.ts"
+      - "tests/fixtures/commandcode-model-ids.json"
+      - "tests/fixtures/commandcode-pricing.json"
       - "tests/test-model-metadata-check.ts"
+      - "tests/test-models.ts"
+      - "tests/test-pricing.ts"
   schedule:
     - cron: "17 6 * * *"
   workflow_dispatch:
@@ -58,8 +65,6 @@ jobs:
       - run: npm ci
       - name: Synchronize with the latest Command Code CLI
         run: npm run sync:commandcode-catalog | tee commandcode-catalog-report.md
-      - name: Verify the live Provider API catalog and pricing coverage
-        run: npm run check:live-catalog
       - name: Format and verify synchronized files
         run: |
           npm run format -- src/commandcode-catalog.ts README.md

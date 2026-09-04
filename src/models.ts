@@ -11,11 +11,15 @@ import {
   type CommandCodeReasoningEffort,
 } from "./commandcode-catalog.ts"
 
-/** Upstream CLI efforts with the manual overrides merged over them. */
-export const MODEL_EFFORTS: Readonly<Record<string, readonly CommandCodeReasoningEffort[]>> = {
-  ...CATALOG_MODEL_EFFORTS,
-  ...MODEL_EFFORT_OVERRIDES,
+export function mergeModelEfforts(
+  catalog: Readonly<Record<string, readonly CommandCodeReasoningEffort[]>>,
+  overrides: Readonly<Record<string, readonly CommandCodeReasoningEffort[]>>,
+): Readonly<Record<string, readonly CommandCodeReasoningEffort[]>> {
+  return { ...catalog, ...overrides }
 }
+
+/** Upstream CLI efforts with the manual overrides merged over them. */
+export const MODEL_EFFORTS = mergeModelEfforts(CATALOG_MODEL_EFFORTS, MODEL_EFFORT_OVERRIDES)
 
 export { MODEL_INPUT_MODALITIES, MODEL_MAX_OUTPUT_TOKENS, MODEL_REASONING }
 export type { CommandCodeInputType }
