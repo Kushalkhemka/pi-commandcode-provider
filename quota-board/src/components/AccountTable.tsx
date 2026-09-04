@@ -21,15 +21,9 @@ function windowValue(account: AccountView, name: "fiveHour" | "weekly") {
   return account.snapshot?.windows.find((window) => window.name === name) ?? null
 }
 
-function avatarFor(account: AccountView): string {
-  const seed = account.keyFingerprint
-  let hash = 0
-  for (const character of seed) hash = (hash * 31 + character.charCodeAt(0)) >>> 0
-  const bucket = hash % 50
-  // Preserve the two original assignments shown before the pool expansion,
-  // while keeping this a one-to-one permutation across all 50 avatar slots.
-  const compatibilityBucket = bucket === 18 ? 0 : bucket === 0 ? 18 : bucket === 13 ? 1 : bucket === 1 ? 13 : bucket
-  return `/avatars/avatar-${String(compatibilityBucket + 1).padStart(2, "0")}.svg`
+function avatarFor(accountIndex: number): string {
+  const avatarNumber = (accountIndex % 256) + 1
+  return `/avatars/avatar-${String(avatarNumber).padStart(2, "0")}.svg`
 }
 
 export function AccountTable({
@@ -59,7 +53,7 @@ export function AccountTable({
         <span>Account</span><span>Plan</span><span>5-hour</span><span>Weekly</span>
         <span>Monthly left</span><span>Tokens</span><span>Cache hit</span><span>Status</span><span />
       </div>
-      {accounts.map((account) => {
+      {accounts.map((account, accountIndex) => {
         const five = windowValue(account, "fiveHour")
         const weekly = windowValue(account, "weekly")
         const monthlyRate = account.snapshot?.monthlyCap
@@ -85,7 +79,7 @@ export function AccountTable({
             tabIndex={0}
           >
             <span className="account-name">
-              <img className="account-avatar" src={avatarFor(account)} alt="" />
+              <img className="account-avatar" src={avatarFor(accountIndex)} alt="" />
               <span>
                 <span className="account-name__title">
                   <strong>{account.label}</strong>

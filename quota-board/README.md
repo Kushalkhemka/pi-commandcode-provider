@@ -17,7 +17,7 @@ The board is built for teams managing roughly 5–100 CommandCode accounts. API 
 - Concurrent bulk refreshes with per-account failure isolation
 - Pure-black dark mode and a high-contrast light mode
 - Responsive account table and full mobile workflow
-- 50 bundled profile avatars, assigned deterministically from each key fingerprint
+- 256 bundled profile avatars, assigned without repetition before cycling
 - Operator-confirmed API key copying without exposing keys in the dashboard payload
 - In-product endpoint inventory showing each data source and its stability
 
@@ -122,7 +122,7 @@ npm run check
 
 This runs the vault and analytics tests, TypeScript validation, and the production build.
 
-The bundled account art can be regenerated with `npm run sync:avatars`. It preserves the original eight portraits and expands the same restrained style with deterministic local SVG variants of [DiceBear Notionists](https://www.dicebear.com/styles/notionists/), distributed under CC0.
+The bundled account art can be regenerated with `npm run sync:avatars`. It preserves the original eight portraits and expands the same restrained style to 256 deterministic local SVG variants of [DiceBear Notionists](https://www.dicebear.com/styles/notionists/), distributed under CC0. Accounts receive each portrait once in their stored order, then the sequence repeats.
 
 ## Design references
 
