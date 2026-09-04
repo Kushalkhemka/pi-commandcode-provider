@@ -3,6 +3,10 @@ import { readFile } from "node:fs/promises"
 import { describe, it } from "node:test"
 
 interface PackageManifest {
+  name?: string
+  version?: string
+  repository?: { url?: string }
+  publishConfig?: { access?: string }
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
@@ -17,6 +21,18 @@ async function readPackageManifest(): Promise<PackageManifest> {
 }
 
 describe("package manifest", () => {
+  it("publishes the maintained fork under its public npm scope", async () => {
+    const manifest = await readPackageManifest()
+
+    assert.equal(manifest.name, "@kushalkhemka/pi-commandcode-provider")
+    assert.equal(manifest.version, "1.0.0")
+    assert.equal(
+      manifest.repository?.url,
+      "git+https://github.com/Kushalkhemka/pi-commandcode-provider.git",
+    )
+    assert.equal(manifest.publishConfig?.access, "public")
+  })
+
   it("uses pi's bundled core packages instead of installing private runtime copies", async () => {
     const manifest = await readPackageManifest()
 

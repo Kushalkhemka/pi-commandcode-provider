@@ -481,7 +481,13 @@ try {
     { timeoutMs: 180_000 },
   )
   assert.equal(install.code, 0, install.stderr)
-  const packedExtension = join(appDir, "node_modules", "pi-commandcode-provider", "index.ts")
+  const packedExtension = join(
+    appDir,
+    "node_modules",
+    "@kushalkhemka",
+    "pi-commandcode-provider",
+    "index.ts",
+  )
   const packedLive = await run(
     piBin,
     [

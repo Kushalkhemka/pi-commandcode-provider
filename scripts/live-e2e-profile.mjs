@@ -53,6 +53,7 @@ function runProfile(profile, apiKey) {
     COMMAND_CODE_API_KEY: apiKey,
     COMMANDCODE_E2E_MODEL: model,
     COMMANDCODE_E2E_PROFILE: profile,
+    COMMANDCODE_ENABLE_LEGACY_GO: profile === "go" ? "1" : "0",
   }
   delete env.COMMANDCODE_API_KEY
   delete env.COMMANDCODE_E2E_GO_API_KEY

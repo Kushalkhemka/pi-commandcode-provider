@@ -11,11 +11,15 @@ import {
   type CommandCodeReasoningEffort,
 } from "./commandcode-catalog.ts"
 
-/** Upstream CLI efforts with the manual overrides merged over them. */
-export const MODEL_EFFORTS: Readonly<Record<string, readonly CommandCodeReasoningEffort[]>> = {
-  ...CATALOG_MODEL_EFFORTS,
-  ...MODEL_EFFORT_OVERRIDES,
+export function mergeModelEfforts(
+  catalog: Readonly<Record<string, readonly CommandCodeReasoningEffort[]>>,
+  overrides: Readonly<Record<string, readonly CommandCodeReasoningEffort[]>>,
+): Readonly<Record<string, readonly CommandCodeReasoningEffort[]>> {
+  return { ...catalog, ...overrides }
 }
+
+/** Upstream CLI efforts with the manual overrides merged over them. */
+export const MODEL_EFFORTS = mergeModelEfforts(CATALOG_MODEL_EFFORTS, MODEL_EFFORT_OVERRIDES)
 
 export { MODEL_INPUT_MODALITIES, MODEL_MAX_OUTPUT_TOKENS, MODEL_REASONING }
 export type { CommandCodeInputType }
@@ -24,7 +28,9 @@ export const DEFAULT_PROVIDER_API_BASE = "https://api.commandcode.ai/provider/v1
 export const DEFAULT_MODELS_URL = `${DEFAULT_PROVIDER_API_BASE}/models`
 export const DEFAULT_MODELS_TIMEOUT_MS = 10_000
 
-const DEFAULT_MAX_OUTPUT_TOKENS = 65_536
+// Match the Command Code CLI's provider-wide default. Model-specific catalog
+// limits still override this when they are lower.
+const DEFAULT_MAX_OUTPUT_TOKENS = 64_000
 const MODEL_CACHE_VERSION = 1
 
 export type CommandCodeApi = "openai-completions" | "anthropic-messages"

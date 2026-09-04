@@ -50,6 +50,7 @@ export { COMMAND_CODE_CLI_VERSION }
 const DEFAULT_GENERATE_MAX_TOKENS = 64_000
 const DEFAULT_MAX_RETRIES = 0
 const DEFAULT_MAX_RETRY_DELAY_MS = 60_000
+const MAX_PAUSE_CONTINUATIONS = 5
 const BASE_RETRY_DELAY_MS = 500
 
 function isRetryableStatus(status: number): boolean {
@@ -286,6 +287,8 @@ export function createStreamCommandCode(deps: CoreDependencies) {
         { contentIndex: number; toolCall: ToolCallContent; partialArgs: string }
       >()
       let finished = false
+      let pauseTurn = false
+      let pauseContinuations = 0
 
       const abortUpstream = () => {
         if (!controller.signal.aborted) controller.abort()
@@ -495,10 +498,10 @@ export function createStreamCommandCode(deps: CoreDependencies) {
               const input = numberValue(details?.noCacheTokens)
               const cacheRead = numberValue(details?.cacheReadTokens) ?? 0
               const cacheWrite = numberValue(details?.cacheWriteTokens) ?? 0
-              output.usage.input = input ?? Math.max(0, totalInput - cacheRead - cacheWrite)
-              output.usage.output = numberValue(usage.outputTokens) ?? 0
-              output.usage.cacheRead = cacheRead
-              output.usage.cacheWrite = cacheWrite
+              output.usage.input += input ?? Math.max(0, totalInput - cacheRead - cacheWrite)
+              output.usage.output += numberValue(usage.outputTokens) ?? 0
+              output.usage.cacheRead += cacheRead
+              output.usage.cacheWrite += cacheWrite
               output.usage.totalTokens =
                 output.usage.input +
                 output.usage.output +
@@ -507,6 +510,7 @@ export function createStreamCommandCode(deps: CoreDependencies) {
               deps.calculateCost(model, output.usage)
             }
             output.stopReason = mapFinishReason(event.finishReason)
+            pauseTurn = rawFinishReason === "pause_turn"
             finished = true
             break
           }
@@ -765,6 +769,31 @@ export function createStreamCommandCode(deps: CoreDependencies) {
             // Stream completed successfully.
             endTextBlock()
             endThinking()
+
+            if (pauseTurn && pauseContinuations < MAX_PAUSE_CONTINUATIONS) {
+              pauseContinuations += 1
+              pauseTurn = false
+              finished = false
+              await reader.cancel().catch(() => undefined)
+              try {
+                reader.releaseLock()
+              } catch {}
+              reader = undefined
+
+              // Match command-code@1.47.0's hosted transport: the stable
+              // threadId resumes server-side state, so the original body is
+              // intentionally repeated rather than appending partial output.
+              // Continuations are successful follow-up requests, not retries.
+              // Reset the transient retry budget to match Command Code CLI.
+              attempt = -1
+              continue retryLoop
+            }
+
+            if (pauseTurn) {
+              throw new Error(
+                `Provider requested more than ${MAX_PAUSE_CONTINUATIONS} pause_turn continuations`,
+              )
+            }
 
             stream.push({
               type: "done",

@@ -114,6 +114,7 @@ export interface StreamOptions {
   maxTokens?: number
   temperature?: number
   sessionId?: string
+  cacheRetention?: "none" | "short" | "long"
   /** Resolved pi thinking level; forwarded only through the model's map. */
   reasoning?: string
   onPayload?: (payload: unknown, model: ModelLike) => unknown | Promise<unknown>

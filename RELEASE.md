@@ -28,7 +28,7 @@ If npm asks for browser or OTP auth, run the publish command manually and comple
 Verify the registry state:
 
 ```sh
-npm view pi-commandcode-provider@next version dist-tags --json
+npm view @kushalkhemka/pi-commandcode-provider@next version dist-tags --json
 ```
 
 Expected:
@@ -45,7 +45,7 @@ Always test from npm, not the local checkout.
 ```sh
 PI_SKIP_VERSION_CHECK=1 \
 pi --no-extensions \
-  -e npm:pi-commandcode-provider@next \
+  -e npm:@kushalkhemka/pi-commandcode-provider@next \
   --list-models commandcode
 ```
 
@@ -67,7 +67,7 @@ export PI_CODING_AGENT_SESSION_DIR="$PI_CC_TEST_SESSION_DIR"
 export PI_SKIP_VERSION_CHECK=1
 
 pi --no-extensions \
-  -e npm:pi-commandcode-provider@next \
+  -e npm:@kushalkhemka/pi-commandcode-provider@next \
   --provider commandcode \
   --model deepseek/deepseek-v4-flash
 ```
@@ -102,7 +102,7 @@ Using the same exported temp variables from above:
 
 ```sh
 pi --no-extensions \
-  -e npm:pi-commandcode-provider@next \
+  -e npm:@kushalkhemka/pi-commandcode-provider@next \
   --no-session \
   -p \
   --provider commandcode \
@@ -131,10 +131,10 @@ unset PI_CODING_AGENT_DIR PI_CODING_AGENT_SESSION_DIR PI_SKIP_VERSION_CHECK
 After the `next` package is verified, set the intended stable version:
 
 ```sh
-npm version 0.1.1 --no-git-tag-version
+npm version 1.0.0 --no-git-tag-version
 ```
 
-Replace `0.1.1` with the intended stable version.
+Replace `1.0.0` with the intended stable version.
 
 Update `CHANGELOG.md`, then run checks:
 
@@ -148,11 +148,11 @@ git diff --check
 Commit on a release branch and open a PR:
 
 ```sh
-git checkout -b release/0.1.1
+git checkout -b release/1.0.0
 git add .
-git commit -m "Release 0.1.1"
-git push origin release/0.1.1
-gh pr create --title "chore(release): publish 0.1.1" --base main
+git commit -m "chore(release): publish 1.0.0"
+git push origin release/1.0.0
+gh pr create --title "chore(release): publish 1.0.0" --base main
 ```
 
 `main` is branch-protected. The release must go through a PR with passing CI.
@@ -169,8 +169,8 @@ After merge, pull `main` and tag locally:
 ```sh
 git checkout main
 git pull origin main
-git tag -a v0.1.1 -m "Release 0.1.1"
-git push origin v0.1.1
+git tag -a v1.0.0 -m "Release 1.0.0"
+git push origin v1.0.0
 ```
 
 Publish stable locally:
@@ -184,8 +184,8 @@ Publishing is intentionally manual/local; there is no GitHub Actions publish wor
 Verify npm:
 
 ```sh
-npm view pi-commandcode-provider version dist-tags --json
-npm view pi-commandcode-provider@0.1.1 version --json
+npm view @kushalkhemka/pi-commandcode-provider version dist-tags --json
+npm view @kushalkhemka/pi-commandcode-provider@1.0.0 version --json
 ```
 
 Expected:
@@ -198,9 +198,9 @@ Expected:
 Comment on the related PR and issue after publishing and pushing:
 
 ```sh
-gh pr comment <number> --body "Shipped in \`pi-commandcode-provider@0.1.1\` / tag \`v0.1.1\`."
+gh pr comment <number> --body "Shipped in \`@kushalkhemka/pi-commandcode-provider@1.0.0\` / tag \`v1.0.0\`."
 
-gh issue comment <number> --body "Shipped in \`pi-commandcode-provider@0.1.1\` / tag \`v0.1.1\`."
+gh issue comment <number> --body "Shipped in \`@kushalkhemka/pi-commandcode-provider@1.0.0\` / tag \`v1.0.0\`."
 ```
 
 Only comment on PRs or issues actually included in the release.
