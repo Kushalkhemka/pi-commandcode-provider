@@ -1,10 +1,10 @@
-export const COMMAND_CODE_CLI_VERSION = "1.47.0"
+export const COMMAND_CODE_CLI_VERSION = "1.49.1"
 
 export type CommandCodeInputType = "text" | "image"
 export type CommandCodeReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max"
 
 /**
- * Generated from command-code@1.47.0 by `npm run sync:commandcode-catalog`.
+ * Generated from command-code@1.49.1 by `npm run sync:commandcode-catalog`.
  * Do not edit manually.
  */
 export const MODEL_INPUT_MODALITIES: Readonly<Record<string, readonly CommandCodeInputType[]>> = {
@@ -30,6 +30,7 @@ export const MODEL_INPUT_MODALITIES: Readonly<Record<string, readonly CommandCod
   "gpt-5.6-luna": ["text", "image"],
   "gpt-5.6-sol": ["text", "image"],
   "gpt-5.6-terra": ["text", "image"],
+  "gpt-6-astra": ["text", "image"],
   "meta/muse-spark-1.1": ["text", "image"],
   "meta/muse-spark-1.2": ["text", "image"],
   "meta/muse-spark-1.2-contributor": ["text", "image"],
@@ -83,6 +84,7 @@ export const MODEL_REASONING: Readonly<Record<string, true>> = {
   "gpt-5.6-luna": true,
   "gpt-5.6-sol": true,
   "gpt-5.6-terra": true,
+  "gpt-6-astra": true,
   "meituan/LongCat-2.0:free": true,
   "meta/muse-spark-1.1": true,
   "meta/muse-spark-1.2": true,
@@ -143,10 +145,11 @@ export const MODEL_EFFORTS: Readonly<Record<string, readonly CommandCodeReasonin
   "gpt-5.6-luna": ["low", "medium", "high", "xhigh", "max"],
   "gpt-5.6-sol": ["low", "medium", "high", "xhigh", "max"],
   "gpt-5.6-terra": ["low", "medium", "high", "xhigh", "max"],
+  "gpt-6-astra": ["low", "medium", "high", "xhigh", "max"],
   "meta/muse-spark-1.1": ["low", "medium", "high", "xhigh"],
   "meta/muse-spark-1.2": ["low", "medium", "high", "xhigh"],
   "meta/muse-spark-1.2-contributor": ["low", "medium", "high", "xhigh"],
-  "meta/muse-spark-1.3": ["low", "medium", "high", "xhigh"],
+  "meta/muse-spark-1.3": ["low", "medium", "high", "xhigh", "max"],
   "meta/muse-spark-1.3-contributor": ["low", "medium", "high", "xhigh"],
   "moonshotai/Kimi-K3": ["low", "high", "max"],
   "Qwen/Qwen3.8-27B": ["low", "medium", "xhigh"],

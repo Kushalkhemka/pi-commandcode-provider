@@ -22,7 +22,7 @@
 - **Full agent loops** with incremental tool arguments, reasoning, images, usage, aborts, and retries
 - **Stable prompt-cache routing** using Pi session IDs on OpenAI-compatible requests
 - **Live model discovery** with cache-first startup and background refresh
-- **Current capabilities** synchronized from `command-code@1.47.0`
+- **Current capabilities** synchronized from `command-code@1.49.1`
 - **Explicit pricing coverage** for every model in the current live Provider API catalog
 - **Zero-data-retention header** support through `CMD_ZDR=1`
 - **No runtime dependency bundle**—the extension uses Pi's own core packages
