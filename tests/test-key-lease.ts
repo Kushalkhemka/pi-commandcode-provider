@@ -74,17 +74,27 @@ describe("OpenSec CommandCode key leasing", () => {
 
     const manager = new CommandCodeKeyLeaseManager()
     await manager.resolve(makeModel(), { apiKey: "master-token", sessionId: "session-1" })
-    const second = await Promise.race([
-      manager.resolve(makeModel(), { apiKey: "master-token", sessionId: "session-1" }),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("cached lease renewal blocked resolve")), 100),
-      ),
-    ])
-
-    assert.equal(second?.apiKey, "upstream-key-1")
-    await started
-    assert.equal(leaseCalls, 2)
-    releaseRenewal?.()
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const secondPromise = manager.resolve(makeModel(), {
+      apiKey: "master-token",
+      sessionId: "session-1",
+    })
+    try {
+      const second = await Promise.race([
+        secondPromise,
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error("cached lease renewal blocked resolve")), 1000)
+        }),
+      ])
+      assert.equal(second?.apiKey, "upstream-key-1")
+      await started
+      assert.equal(leaseCalls, 2)
+    } finally {
+      if (timer) clearTimeout(timer)
+      releaseRenewal?.()
+      await secondPromise
+      await new Promise<void>((resolve) => setImmediate(resolve))
+    }
   })
 
   it("keeps a sticky session lease and rotates once before consuming a quota response", async () => {
@@ -150,7 +160,14 @@ describe("OpenSec CommandCode key leasing", () => {
       return new Response(null, { status: 202 })
     }
     const manager = new CommandCodeKeyLeaseManager()
-    const alice = await manager.resolve(makeModel(), { apiKey: "alice", sessionId: "same" })
+    const observed: string[] = []
+    const alice = await manager.resolve(makeModel(), {
+      apiKey: "alice",
+      sessionId: "same",
+      onUsageEvent: (event) => {
+        observed.push(event.type)
+      },
+    })
     const bob = await manager.resolve(makeModel(), { apiKey: "bob", sessionId: "same" })
     const event: AssistantMessageEvent = {
       type: "done",
@@ -173,9 +190,11 @@ describe("OpenSec CommandCode key leasing", () => {
         },
       },
     }
+    alice?.onUsageEvent?.({ type: "start", partial: event.message })
     bob?.onUsageEvent?.(event)
     alice?.onUsageEvent?.(event)
     alice?.onUsageEvent?.(event)
+    assert.deepEqual(observed, ["start", "done", "done"])
     await manager.flushUsage()
     await manager.flushUsage()
     assert.equal(reports.length, 2)
@@ -379,5 +398,85 @@ describe("OpenSec credential destination boundaries", () => {
       assert.doesNotMatch(String(error), /fixture-secret|echoed/)
       return true
     })
+  })
+})
+
+describe("lease retry transport contracts", () => {
+  it("can replay a Request body after quota rotation", async () => {
+    process.env.OPENSEC_ROUTER_URL = "https://router.test"
+    process.env.OPENSEC_ROUTER_TOKEN = "fixture"
+    let leases = 0
+    const manager = new CommandCodeKeyLeaseManager(async () =>
+      Response.json({
+        leaseId: String(++leases),
+        accountId: String(leases),
+        apiKey: "key-" + leases,
+        expiresAt: new Date(Date.now() + 300000).toISOString(),
+      }),
+    )
+    const bodies: string[] = []
+    const options = await manager.resolve(makeModel(), {
+      sessionId: "body",
+      fetch: async (input, init) => {
+        bodies.push(await new Request(input, init).text())
+        return new Response("quota", { status: bodies.length === 1 ? 402 : 200 })
+      },
+    })
+    const request = new Request("https://provider.test", {
+      method: "POST",
+      body: JSON.stringify({ prompt: "fixture" }),
+    })
+    assert.equal((await options!.fetch!(request)).status, 200)
+    assert.deepEqual(bodies, [
+      JSON.stringify({ prompt: "fixture" }),
+      JSON.stringify({ prompt: "fixture" }),
+    ])
+  })
+  it("aborts one waiting caller promptly without cancelling a shared replacement", async () => {
+    process.env.OPENSEC_ROUTER_URL = "https://router.test"
+    process.env.OPENSEC_ROUTER_TOKEN = "fixture"
+    let leases = 0,
+      release!: () => void,
+      notify!: () => void
+    const waiting = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const started = new Promise<void>((resolve) => {
+      notify = resolve
+    })
+    const manager = new CommandCodeKeyLeaseManager(async () => {
+      const id = ++leases
+      if (id === 2) {
+        notify()
+        await waiting
+      }
+      return Response.json({
+        leaseId: String(id),
+        accountId: String(id),
+        apiKey: "key-" + id,
+        expiresAt: new Date(Date.now() + 300000).toISOString(),
+      })
+    })
+    const provider: typeof fetch = async (_input, init) =>
+      new Response("quota", {
+        status: new Headers(init?.headers).get("authorization") === "Bearer key-1" ? 402 : 200,
+      })
+    const first = await manager.resolve(makeModel(), { sessionId: "shared-abort", fetch: provider })
+    const second = await manager.resolve(makeModel(), {
+      sessionId: "shared-abort",
+      fetch: provider,
+    })
+    const controller = new AbortController()
+    const a = first!.fetch!("https://provider.test", { signal: controller.signal })
+    await started
+    const b = second!.fetch!("https://provider.test")
+    controller.abort()
+    try {
+      await assert.rejects(a, { name: "AbortError" })
+    } finally {
+      release()
+    }
+    assert.equal((await b).status, 200)
+    assert.equal(leases, 2)
   })
 })

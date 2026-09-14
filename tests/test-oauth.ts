@@ -214,14 +214,25 @@ describe("OAuth functions", () => {
       },
     })
     await assert.rejects(validateApiKey("os_member_bad"), /Invalid OpenSec member token format/)
-    const credentials = await login({
-      onPrompt: async () => token,
-      onAuth: () => {
-        throw new Error("must not open provider login")
-      },
-    })
-    assert.equal(credentials.access, token)
-    assert.equal(credentials.refresh, token)
+    const originalFetch = globalThis.fetch
+    let contacted = false
+    globalThis.fetch = async () => {
+      contacted = true
+      throw new Error("must not contact provider")
+    }
+    try {
+      const credentials = await login({
+        onPrompt: async () => token,
+        onAuth: () => {
+          throw new Error("must not open provider login")
+        },
+      })
+      assert.equal(credentials.access, token)
+      assert.equal(credentials.refresh, token)
+      assert.equal(contacted, false)
+    } finally {
+      globalThis.fetch = originalFetch
+    }
   })
 
   it("getApiKey returns the access token", () => {

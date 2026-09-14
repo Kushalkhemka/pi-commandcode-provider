@@ -15,6 +15,9 @@ This is a review of the reported paths, not an exhaustive security audit.
 - Legacy router tokens without an explicit router URL now fail closed before provider registration or lease-manager use, preventing accidental forwarding to CommandCode.
 - Shutdown drains all token-scoped batches, waits for active uploads and honors backoff within 1.5 seconds. Deadline timers are cleared and any remaining upload is aborted.
 
+- Provider `Request` bodies are cloned per attempt so rotation can replay them. Caller cancellation stops lease waits promptly without cancelling other callers sharing the same allocation; the underlying shared request remains bounded by its 10-second timeout.
+- Existing usage observers receive every event, and token-login tests prohibit network calls. Renewal tests clean up their timeout and pending work.
+
 ## CodeQL dispositions
 
 Alerts 31 and 32 (`js/insufficient-password-hash`) identify SHA-256 values used only as in-memory cache indexes for bearer tokens. They are not persisted password verifiers, nor used to authenticate callers. Adding password-stretching work to each cache lookup would not improve this boundary.

@@ -28,6 +28,23 @@ function joinUrl(base: string, path: string): string {
   return `${base.replace(/\/+$/, "")}${path}`
 }
 
+async function awaitLease<T>(task: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return task
+  let aborted!: () => void
+  try {
+    return await Promise.race([
+      task,
+      new Promise<never>((_resolve, reject) => {
+        aborted = () => reject(signal.reason ?? new DOMException("Aborted", "AbortError"))
+        signal.addEventListener("abort", aborted, { once: true })
+        if (signal.aborted) aborted()
+      }),
+    ])
+  } finally {
+    signal.removeEventListener("abort", aborted)
+  }
+}
+
 function isQuotaFailure(response: Response): Promise<boolean> {
   if ([401, 402].includes(response.status)) return Promise.resolve(true)
   if (![403, 429].includes(response.status)) return Promise.resolve(false)
@@ -82,7 +99,7 @@ export class CommandCodeKeyLeaseManager {
       throw new Error("OpenSec routing requires OPENSEC_ROUTER_TOKEN or a configured provider key")
     const sessionId = options?.sessionId || this.fallbackSession
     const cacheKey = createHash("sha256").update(token).digest("hex") + ":" + sessionId
-    let lease = await this.acquire({ sessionId, model: model.id }, token)
+    let lease = await this.acquire({ sessionId, model: model.id }, token, options?.signal)
     const fetchImpl = options?.fetch ?? fetch
     const eventId = crypto.randomUUID()
     let reported = false
@@ -90,6 +107,7 @@ export class CommandCodeKeyLeaseManager {
       ...options,
       apiKey: lease.apiKey,
       onUsageEvent: (event) => {
+        options?.onUsageEvent?.(event)
         if (reported || (event.type !== "done" && event.type !== "error")) return
         reported = true
         const message = event.type === "done" ? event.message : event.error
@@ -107,12 +125,23 @@ export class CommandCodeKeyLeaseManager {
         })
       },
       fetch: async (input, init) => {
+        const signals = [
+          init?.signal,
+          input instanceof Request ? input.signal : undefined,
+          options?.signal,
+        ].filter((signal): signal is AbortSignal => Boolean(signal))
+        const signal = signals.length ? AbortSignal.any(signals) : undefined
+        signal?.throwIfAborted()
+        const requestInit = { ...init, signal }
         // Core retries may retain the original headers, while another request
         // has already replaced this session's failed key.
         lease = this.leases.get(cacheKey) ?? lease
         routed.apiKey = lease.apiKey
         const attempted = lease
-        let response = await fetchImpl(input, replaceAuthorization(init, attempted.apiKey, input))
+        let response = await fetchImpl(
+          input instanceof Request ? input.clone() : input,
+          replaceAuthorization(requestInit, attempted.apiKey, input),
+        )
         if (!(await isQuotaFailure(response))) return response
         // Core receives only the replacement; release the abandoned response
         // even if lease allocation subsequently fails.
@@ -126,10 +155,15 @@ export class CommandCodeKeyLeaseManager {
             expectedLeaseId: attempted.leaseId,
           },
           token,
+          signal,
         )
         lease = replacement
         routed.apiKey = replacement.apiKey
-        response = await fetchImpl(input, replaceAuthorization(init, replacement.apiKey, input))
+        signal?.throwIfAborted()
+        response = await fetchImpl(
+          input instanceof Request ? input.clone() : input,
+          replaceAuthorization(requestInit, replacement.apiKey, input),
+        )
         return response
       },
     }
@@ -146,8 +180,14 @@ export class CommandCodeKeyLeaseManager {
     return this.queue?.stats
   }
 
-  private async acquire(request: LeaseRequest, token: string): Promise<KeyLease> {
-    return this.acquireInternal(request, token, false)
+  private async acquire(
+    request: LeaseRequest,
+    token: string,
+    signal?: AbortSignal,
+  ): Promise<KeyLease> {
+    signal?.throwIfAborted()
+    // Stop this caller promptly without cancelling another caller's shared lease request.
+    return awaitLease(this.acquireInternal(request, token, false), signal)
   }
 
   private async acquireInternal(
