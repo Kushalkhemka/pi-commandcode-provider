@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto"
-import { DEFAULT_OPENSEC_ROUTER_URL, isOpenSecMemberToken } from "./opensec-config.ts"
+import { isOpenSecMemberToken, routerBaseUrl } from "./opensec-config.ts"
 import { UsageQueue } from "./usage-queue.ts"
 import type { ModelLike, StreamOptions } from "./types.ts"
 
@@ -59,7 +59,7 @@ function replaceAuthorization(
 
 export class CommandCodeKeyLeaseManager {
   private readonly explicitRouter = Boolean(process.env.OPENSEC_ROUTER_URL?.trim())
-  private readonly baseUrl = process.env.OPENSEC_ROUTER_URL?.trim() || DEFAULT_OPENSEC_ROUTER_URL
+  private readonly baseUrl = routerBaseUrl(process.env.OPENSEC_ROUTER_URL?.trim() || undefined)
   private readonly configuredToken = process.env.OPENSEC_ROUTER_TOKEN?.trim()
   private readonly leases = new Map<string, KeyLease>()
   private readonly queue = this.baseUrl
@@ -68,6 +68,8 @@ export class CommandCodeKeyLeaseManager {
   private readonly renewalAfter = new Map<string, number>()
   private readonly inFlight = new Map<string, Promise<KeyLease>>()
   private readonly fallbackSession = `pi-${process.pid}-${crypto.randomUUID()}`
+
+  constructor(private readonly fetchImpl: typeof fetch = fetch) {}
 
   get enabled(): boolean {
     return this.explicitRouter || isOpenSecMemberToken(this.configuredToken)
@@ -171,15 +173,17 @@ export class CommandCodeKeyLeaseManager {
     const pending = this.inFlight.get(requestKey)
     if (pending) return pending
     const task = (async () => {
-      const response = await fetch(joinUrl(this.baseUrl!, "/api/router/lease"), {
+      const response = await this.fetchImpl(joinUrl(this.baseUrl!, "/api/router/lease"), {
         method: "POST",
         headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
         body: JSON.stringify(request),
         signal: AbortSignal.timeout(10_000),
+        redirect: "error",
       })
       if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as { error?: string } | null
-        throw new Error(body?.error ?? `OpenSec router request failed (${response.status})`)
+        void response.body?.cancel().catch(() => undefined)
+        // The remote error body may echo credentials; never surface it in Pi.
+        throw new Error(`OpenSec router request failed (${response.status})`)
       }
       const lease = (await response.json()) as KeyLease
       // A slower renewal must not overwrite a rotation that finished meanwhile.

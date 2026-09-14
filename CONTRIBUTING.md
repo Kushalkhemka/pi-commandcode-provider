@@ -56,16 +56,7 @@ Use `npm run test:e2e:live:all` with the Go and GOAT file variables to run both 
 
 `tests/test-pi-local.mjs` runs the extension inside a real `pi` binary against a mock Command Code API, including every credential source (`/login` OAuth and API-key credentials, `--api-key`, env keys). It skips locally when `pi` is not on `PATH`; CI installs pi and runs it as part of `npm test` with `PI_LOCAL_REQUIRED=1`. Point `PI_BIN` at another pi executable to test against a specific version.
 
-### Oh My Pi compatibility
-
-`tests/test-omp-compat.mjs` runs the extension inside a real `omp` binary against a mock Command Code API. It skips locally when `omp` is not on `PATH`; CI installs Oh My Pi and runs it as a required check with `OMP_COMPAT_REQUIRED=1`, so a change that only loads on pi fails CI instead of the next `omp plugin install`.
-
-To run it locally, point `OMP_BIN` at an omp executable (Oh My Pi needs Bun ≥ 1.3.14):
-
-```sh
-npm install -g @oh-my-pi/pi-coding-agent
-OMP_BIN="$(npm prefix -g)/bin/omp" node tests/test-omp-compat.mjs
-```
+This project targets Pi. CI and the default test suite do not test Oh My Pi.
 
 Before opening a PR, run:
 

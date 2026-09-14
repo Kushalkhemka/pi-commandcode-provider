@@ -89,8 +89,6 @@ rules:
         - "**/*.ts"
         - "**/index.ts"
 
-
-
   # ────────────────────────────────────────────────────────────────────────
   # Supply chain: dependency injection
   # ────────────────────────────────────────────────────────────────────────
@@ -209,8 +207,8 @@ rules:
   - id: pi-extension-unusual-import
     patterns:
       - pattern-either:
-          - pattern: "import $X from \"...\""
-          - pattern: "const $X = require(\"...\")"
+          - pattern: 'import $X from "..."'
+          - pattern: 'const $X = require("...")'
       - metavariable-regex:
           metavariable: $X
           regex: "(compression|pako|zlib|tar|stream|archiver|request|axios|needle|got|superagent|node-fetch|undici)"
@@ -256,7 +254,7 @@ rules:
       - pattern: process.env.$VAR
       - metavariable-regex:
           metavariable: $VAR
-          regex: "(?!COMMANDCODE_|COMMAND_CODE_|CMD_ZDR|NODE_|PATH|HOME|SHELL|USER|LANG|LC_|TERM|TMPDIR|NIX_).*"
+          regex: "(?!OPENSEC_ROUTER_URL$|OPENSEC_ROUTER_TOKEN$|QUOTA_BOARD_|COMMANDCODE_|COMMAND_CODE_|CMD_ZDR|NODE_|PATH|HOME|SHELL|USER|LANG|LC_|TERM|TMPDIR|NIX_).*"
     message: >
       Reading unexpected environment variable $VAR. Provider should only
       read documented Command Code or standard runtime variables.

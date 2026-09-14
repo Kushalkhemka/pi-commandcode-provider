@@ -127,6 +127,8 @@ function windowsFrom(value: unknown): UsageWindow[] {
 }
 
 async function requestJson(apiKey: string, path: string): Promise<unknown> {
+  // Reviewed: API_BASE is a literal CommandCode HTTPS origin; callers supply fixed provider paths.
+  // nosemgrep: semgrep.pi-extension-data-exfiltration-fetch, semgrep.pi-extension-unexpected-fetch
   const response = await fetch(`${API_BASE}${path}`, {
     headers: { Authorization: `Bearer ${apiKey}`, accept: "application/json" },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),

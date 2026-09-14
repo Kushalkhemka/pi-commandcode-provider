@@ -25,6 +25,7 @@ describe("bounded OpenSec usage reporting", () => {
     Date.now = () => now
     const received: { token: string; body: { events: UsageReport[] } }[] = []
     const queue = new UsageQueue("https://router.test/api/router/usage", async (_url, init) => {
+      assert.equal(init?.redirect, "error")
       received.push({
         token: new Headers(init?.headers).get("authorization")!,
         body: JSON.parse(String(init?.body)),

@@ -2,7 +2,12 @@
 version: 1
 slug: "quota-board-src-app-tsx"
 primary_target: "quota-board/src/App.tsx"
-related_targets: ["quota-board/src/components/Pages.tsx","quota-board/src/components/Charts.tsx","quota-board/src/styles.css"]
+related_targets:
+  [
+    "quota-board/src/components/Pages.tsx",
+    "quota-board/src/components/Charts.tsx",
+    "quota-board/src/styles.css",
+  ]
 ---
 
 # CommandCode Quota Board overview

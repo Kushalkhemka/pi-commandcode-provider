@@ -236,7 +236,7 @@ export default async function (pi: ExtensionAPI) {
     runtime.dispose()
     await Promise.race([
       keyLeaseManager.flushUsage(),
-      new Promise<void>((resolve) => setTimeout(resolve, 1500)),
+      new Promise<void>((resolve) => setTimeout(() => resolve(), 1500)),
     ])
   })
 

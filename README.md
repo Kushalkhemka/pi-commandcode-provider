@@ -340,3 +340,9 @@ transport retained earlier authorization headers.
 
 The router preserves assignments across renewal and restart. Cache lifetime and
 actual cache hits remain controlled by CommandCode and its upstream providers.
+
+Router overrides require HTTPS (HTTP is accepted only for literal loopback
+addresses during local development), without URL credentials, queries or
+fragments. Lease and usage uploads reject redirects. Router error bodies are
+not displayed in Pi. A custom router is a trusted credential recipient selected
+through local configuration; do not configure an endpoint you do not control.

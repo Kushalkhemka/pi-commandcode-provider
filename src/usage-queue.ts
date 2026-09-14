@@ -104,6 +104,7 @@ export class UsageQueue {
         headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
         body: JSON.stringify({ events: batch.map((item) => item.event) }),
         signal: AbortSignal.timeout(5000),
+        redirect: "error",
       })
       // Bound response handling; only status/headers are needed for acknowledgement.
       void response.body?.cancel().catch(() => undefined)

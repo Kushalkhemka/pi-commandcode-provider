@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { afterEach, describe, it } from "node:test"
 
+import { routerBaseUrl } from "../src/opensec-config.ts"
 import { CommandCodeKeyLeaseManager } from "../src/key-lease.ts"
 import type { AssistantMessageEvent } from "../src/types.ts"
 import { makeModel } from "./helpers.ts"
@@ -198,7 +199,7 @@ describe("cache-preserving lease failures", () => {
   function setup() {
     process.env.OPENSEC_ROUTER_URL = "https://router.test"
     process.env.OPENSEC_ROUTER_TOKEN = "fixture"
-    return new CommandCodeKeyLeaseManager()
+    return new CommandCodeKeyLeaseManager((input, init) => globalThis.fetch(input, init))
   }
   it("retains the key for temporary 429/5xx responses and rotates for explicit quota exhaustion", async () => {
     const manager = setup()
@@ -307,5 +308,35 @@ describe("cache-preserving lease failures", () => {
     await new Promise((r) => setTimeout(r, 0))
     assert.equal((await manager.resolve(makeModel(), { sessionId: "same" }))!.apiKey, "key-2")
     assert.equal(calls, 3)
+  })
+})
+
+describe("OpenSec credential destination boundaries", () => {
+  it("allows HTTPS and literal loopback only, without URL credentials or hidden components", () => {
+    assert.equal(routerBaseUrl(), "https://cc.opensec.in")
+    assert.equal(routerBaseUrl("https://router.test/cc/"), "https://router.test/cc")
+    assert.equal(routerBaseUrl("http://127.0.0.1:8787"), "http://127.0.0.1:8787")
+    for (const url of [
+      "http://router.test",
+      "ftp://router.test",
+      "https://user:password@router.test",
+      "https://router.test?token=secret",
+      "https://router.test#fragment",
+      "not-a-url",
+    ])
+      assert.throws(() => routerBaseUrl(url))
+  })
+  it("disables lease redirects and never exposes a router error body in Pi", async () => {
+    process.env.OPENSEC_ROUTER_URL = "https://router.test"
+    process.env.OPENSEC_ROUTER_TOKEN = "fixture-secret"
+    const manager = new CommandCodeKeyLeaseManager(async (_url, init) => {
+      assert.equal(init?.redirect, "error")
+      return Response.json({ error: "echoed fixture-secret" }, { status: 401 })
+    })
+    await assert.rejects(manager.resolve(makeModel(), { sessionId: "failure" }), (error) => {
+      assert.match(String(error), /request failed \(401\)/)
+      assert.doesNotMatch(String(error), /fixture-secret|echoed/)
+      return true
+    })
   })
 })
