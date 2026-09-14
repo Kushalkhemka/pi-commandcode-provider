@@ -114,6 +114,9 @@ export class CommandCodeKeyLeaseManager {
         const attempted = lease
         let response = await fetchImpl(input, replaceAuthorization(init, attempted.apiKey, input))
         if (!(await isQuotaFailure(response))) return response
+        // Core receives only the replacement; release the abandoned response
+        // even if lease allocation subsequently fails.
+        void response.body?.cancel().catch(() => undefined)
         const replacement = await this.acquire(
           {
             sessionId,

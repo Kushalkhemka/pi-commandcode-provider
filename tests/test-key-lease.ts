@@ -326,6 +326,39 @@ describe("OpenSec credential destination boundaries", () => {
     ])
       assert.throws(() => routerBaseUrl(url))
   })
+  it("cancels the failed upstream response before acquiring a replacement", async () => {
+    process.env.OPENSEC_ROUTER_URL = "https://router.test"
+    process.env.OPENSEC_ROUTER_TOKEN = "fixture"
+    let cancelled = false,
+      leases = 0
+    const manager = new CommandCodeKeyLeaseManager(async () => {
+      leases++
+      if (leases > 1) {
+        assert.equal(cancelled, true)
+        return new Response(null, { status: 503 })
+      }
+      return Response.json({
+        leaseId: "first",
+        accountId: "first",
+        apiKey: "fixture",
+        expiresAt: new Date(Date.now() + 300000).toISOString(),
+      })
+    })
+    const options = await manager.resolve(makeModel(), {
+      sessionId: "cleanup",
+      fetch: async () =>
+        new Response(
+          new ReadableStream({
+            cancel() {
+              cancelled = true
+            },
+          }),
+          { status: 402 },
+        ),
+    })
+    await assert.rejects(options!.fetch!("https://provider.test"), /request failed/)
+    assert.equal(cancelled, true)
+  })
   it("disables lease redirects and never exposes a router error body in Pi", async () => {
     process.env.OPENSEC_ROUTER_URL = "https://router.test"
     process.env.OPENSEC_ROUTER_TOKEN = "fixture-secret"

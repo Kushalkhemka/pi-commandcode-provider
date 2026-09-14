@@ -7,6 +7,7 @@ This is a review of the reported paths, not an exhaustive security audit.
 
 - Router destinations require HTTPS, except literal loopback HTTP for local development. Embedded credentials, URL queries and fragments are rejected. The default is `https://cc.opensec.in`; a different trusted router requires explicit local configuration.
 - Lease and usage uploads reject redirects. Lease failures expose only the HTTP status, not remote bodies that might echo credentials.
+- Failed upstream response bodies are cancelled before lease replacement, including when allocation fails; this prevents abandoned connections from accumulating. A regression test covers cancellation before the replacement request.
 - Lease fetching accepts an injected transport. Tests exercise destination validation, redirect settings and error redaction.
 - The shutdown timer now uses an explicit function callback. The original `setTimeout(resolve, 1500)` also received a function and was not string evaluation.
 - Semgrep recognizes the documented OpenSec router variables and existing quota-board configuration prefix. Two existing dashboard/provider fetch helpers have narrowly scoped, explained suppressions after checking their callers and fixed origins. Other rules remain enabled across the repository.
