@@ -53,6 +53,20 @@ const quotaResult: CommandCodeQuotaResult = {
 }
 
 describe("commandcode-quota command", () => {
+  it("keeps OpenSec tokens out of the provider quota endpoint", async () => {
+    const pi = new CommandApiDouble()
+    registerCommandCodeQuota(pi, {
+      apiBase: "https://api.commandcode.ai",
+      getConfiguredKey: () => undefined,
+      fetchQuota: async () => {
+        throw new Error("must not send member token upstream")
+      },
+    })
+    const ctx = context("os_member_" + "a".repeat(43))
+    await pi.handler!("", ctx.value)
+    assert.match(ctx.notifications[0].message, /View your OpenSec usage/)
+  })
+
   it("registers the command and resolves OMP placeholders through the fallback key", async () => {
     const pi = new CommandApiDouble()
     let requestKey = ""

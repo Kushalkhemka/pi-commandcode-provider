@@ -62,6 +62,24 @@ function providerStream(
 }
 
 describe("Command Code transport router", () => {
+  it("resolves leased stream options before starting the provider request", async () => {
+    let receivedKey: string | undefined
+    const router = createCommandCodeTransportRouter({
+      createStream: createTestEventStream,
+      resolveOptions: async (_model, options) => ({ ...options, apiKey: "leased-key" }),
+      streamProvider: (_model, _context, options) => {
+        receivedKey = options?.apiKey
+        return completedStream("leased")
+      },
+      streamGenerate: () => completedStream("unused"),
+    })
+    const events = await collectEvents(
+      router.stream(makeModel(), makeContext(), { apiKey: "master-key" }),
+    )
+    assert.equal(receivedKey, "leased-key")
+    assert.equal(events.at(-1)?.type, "done")
+  })
+
   it("keeps using the Provider API after a successful request", async () => {
     let providerCalls = 0
     let generateCalls = 0
