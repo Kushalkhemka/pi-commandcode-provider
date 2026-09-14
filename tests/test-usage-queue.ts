@@ -94,3 +94,72 @@ describe("bounded OpenSec usage reporting", () => {
     assert.equal(queue.stats.dropped, 1)
   })
 })
+
+describe("bounded shutdown drain", () => {
+  it("drains multiple batches and member tokens", async () => {
+    const batches: number[] = []
+    const queue = new UsageQueue("https://router.test", async (_url, init) => {
+      batches.push(JSON.parse(String(init?.body)).events.length)
+      return new Response(null, { status: 202 })
+    })
+    for (let i = 0; i < 25; i++) queue.enqueue(i < 18 ? "alice" : "bob", report())
+    await queue.shutdown()
+    assert.deepEqual(batches, [10, 8, 7])
+    assert.equal(queue.stats.sent, 25)
+    assert.equal(queue.stats.dropped, 0)
+  })
+  it("waits for an active upload then drains the remaining batch", async () => {
+    let release!: () => void,
+      calls = 0
+    const ready = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const queue = new UsageQueue("https://router.test", async () => {
+      if (++calls === 1) await ready
+      return new Response(null, { status: 202 })
+    })
+    for (let i = 0; i < 15; i++) queue.enqueue("member", report())
+    const upload = queue.flush()
+    const drain = queue.shutdown()
+    release()
+    await Promise.all([upload, drain])
+    assert.equal(calls, 2)
+    assert.equal(queue.stats.sent, 15)
+  })
+  it("honors backoff instead of uploading again during a short shutdown deadline", async () => {
+    let calls = 0
+    const queue = new UsageQueue("https://router.test", async () => {
+      calls++
+      return new Response(null, { status: 429, headers: { "retry-after": "60" } })
+    })
+    queue.enqueue("member", report())
+    await queue.flush()
+    const start = performance.now()
+    await queue.shutdown(30)
+    assert.equal(calls, 1)
+    assert.ok(performance.now() - start < 500)
+    assert.equal(queue.stats.dropped, 1)
+  })
+  it("aborts an active upload when its shutdown deadline expires", async () => {
+    let aborted = false
+    const queue = new UsageQueue("https://router.test", async (_url, init) => {
+      await new Promise<void>((resolve) =>
+        init!.signal!.addEventListener(
+          "abort",
+          () => {
+            aborted = true
+            resolve()
+          },
+          { once: true },
+        ),
+      )
+      throw new Error("aborted")
+    })
+    queue.enqueue("member", report())
+    const upload = queue.flush()
+    await queue.shutdown(30)
+    await upload
+    assert.equal(aborted, true)
+    assert.equal(queue.stats.dropped, 1)
+  })
+})

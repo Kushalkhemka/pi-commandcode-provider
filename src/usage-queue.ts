@@ -27,6 +27,10 @@ export class UsageQueue {
   private timer: ReturnType<typeof setTimeout> | undefined
   private nextAttempt = 0
   private warnedAt = 0
+  private activeUpload: Promise<void> | undefined
+  private activeAbort: AbortController | undefined
+  private stopping = false
+  private closed = false
   readonly stats = { queued: 0, sent: 0, dropped: 0, retries: 0 }
 
   constructor(
@@ -36,6 +40,10 @@ export class UsageQueue {
   ) {}
 
   enqueue(token: string, event: UsageReport): void {
+    if (this.stopping) {
+      this.drop(1)
+      return
+    }
     const bytes = Buffer.byteLength(JSON.stringify(event)) + Buffer.byteLength(token) + 128
     if (this.bytes + bytes > this.maxBytes) {
       this.drop(1)
@@ -58,6 +66,7 @@ export class UsageQueue {
   }
 
   private schedule(delay: number) {
+    if (this.stopping) return
     if (this.uploading) return
     if (this.timer && delay !== 0) return
     if (this.timer) clearTimeout(this.timer)
@@ -71,7 +80,61 @@ export class UsageQueue {
     this.timer.unref?.()
   }
 
-  async flush(): Promise<void> {
+  flush(): Promise<void> {
+    if (this.activeUpload || this.closed) return Promise.resolve()
+    const task = this.flushBatch()
+    this.activeUpload = task
+    void task
+      .finally(() => {
+        if (this.activeUpload === task) this.activeUpload = undefined
+      })
+      .catch(() => undefined)
+    return task
+  }
+
+  /** Drain all credentials/batches without exceeding the process shutdown budget. */
+  async shutdown(timeoutMs = 1500): Promise<void> {
+    this.stopping = true
+    if (this.timer) clearTimeout(this.timer)
+    const deadline = performance.now() + timeoutMs
+    try {
+      while (this.items.length || this.activeUpload) {
+        const remaining = deadline - performance.now()
+        if (remaining <= 0) break
+        let timer: ReturnType<typeof setTimeout> | undefined
+        try {
+          if (!this.activeUpload && this.nextAttempt > Date.now()) {
+            await new Promise<void>((resolve) => {
+              timer = setTimeout(
+                () => resolve(),
+                Math.min(remaining, this.nextAttempt - Date.now()),
+              )
+            })
+          } else {
+            const completed = await Promise.race([
+              (this.activeUpload ?? this.flush()).then(() => true),
+              new Promise<boolean>((resolve) => {
+                timer = setTimeout(() => resolve(false), remaining)
+              }),
+            ])
+            if (!completed) break
+          }
+        } finally {
+          if (timer !== undefined) clearTimeout(timer)
+        }
+      }
+    } finally {
+      this.closed = true
+      this.activeAbort?.abort()
+      for (const item of this.items) this.bytes -= item.bytes
+      if (this.items.length) this.drop(this.items.length)
+      this.items = []
+      if (this.timer) clearTimeout(this.timer)
+      this.timer = undefined
+    }
+  }
+
+  private async flushBatch(): Promise<void> {
     if (this.uploading || !this.items.length) return
     this.items = this.items.filter((item) => {
       if (Date.now() - item.createdAt <= 300_000) return true
@@ -98,12 +161,14 @@ export class UsageQueue {
     })
     let retry = false
     let wait = 1000
+    const controller = new AbortController()
+    this.activeAbort = controller
     try {
       const response = await this.fetchImpl(this.url, {
         method: "POST",
         headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
         body: JSON.stringify({ events: batch.map((item) => item.event) }),
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(5000)]),
         redirect: "error",
       })
       // Bound response handling; only status/headers are needed for acknowledgement.
@@ -126,7 +191,12 @@ export class UsageQueue {
     } finally {
       const retained: Item[] = []
       for (const item of batch) {
-        if (retry && item.attempts < 4 && Date.now() - item.createdAt + wait < 300_000) {
+        if (
+          retry &&
+          !this.closed &&
+          item.attempts < 4 &&
+          Date.now() - item.createdAt + wait < 300_000
+        ) {
           item.attempts++
           retained.push(item)
         } else {
@@ -141,6 +211,7 @@ export class UsageQueue {
           Date.now() + Math.max(wait, 1000 * 2 ** retained[0].attempts + Math.random() * 500)
       } else this.nextAttempt = 0
       this.uploading = false
+      if (this.activeAbort === controller) this.activeAbort = undefined
       if (this.items.length) this.schedule(2000)
     }
   }

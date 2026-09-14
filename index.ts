@@ -40,6 +40,7 @@ import { withCommandCodePromptCache } from "./src/prompt-cache.ts"
 import { registerCommandCodeQuota } from "./src/quota-command.ts"
 import { createQuotaBoardReporter } from "./src/quota-board-telemetry.ts"
 import { CommandCodeKeyLeaseManager } from "./src/key-lease.ts"
+import { configuredRouterToken } from "./src/opensec-config.ts"
 import { createCommandCodeRuntime } from "./src/runtime.ts"
 import { createCommandCodeTransportRouter } from "./src/transport.ts"
 
@@ -89,7 +90,7 @@ function registerCompatApiProvider(stream: CompatStreamFunction): void {
  * compat registry: pi exports it, OMP does not.
  */
 function providerApiKey(): string | undefined {
-  const routerToken = process.env.OPENSEC_ROUTER_TOKEN?.trim()
+  const routerToken = configuredRouterToken()
   if (routerToken) return routerToken
   const configured = pickCommandCodeApiKey(getConfiguredApiKey(), undefined)
   if (configured) return configured
@@ -234,10 +235,7 @@ export default async function (pi: ExtensionAPI) {
 
   pi.on("session_shutdown", async () => {
     runtime.dispose()
-    await Promise.race([
-      keyLeaseManager.flushUsage(),
-      new Promise<void>((resolve) => setTimeout(() => resolve(), 1500)),
-    ])
+    await keyLeaseManager.shutdown()
   })
 
   await runtime.initialize()

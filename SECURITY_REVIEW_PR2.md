@@ -12,6 +12,9 @@ This is a review of the reported paths, not an exhaustive security audit.
 - The shutdown timer now uses an explicit function callback. The original `setTimeout(resolve, 1500)` also received a function and was not string evaluation.
 - Semgrep recognizes the documented OpenSec router variables and existing quota-board configuration prefix. Two existing dashboard/provider fetch helpers have narrowly scoped, explained suppressions after checking their callers and fixed origins. Other rules remain enabled across the repository.
 
+- Legacy router tokens without an explicit router URL now fail closed before provider registration or lease-manager use, preventing accidental forwarding to CommandCode.
+- Shutdown drains all token-scoped batches, waits for active uploads and honors backoff within 1.5 seconds. Deadline timers are cleared and any remaining upload is aborted.
+
 ## CodeQL dispositions
 
 Alerts 31 and 32 (`js/insufficient-password-hash`) identify SHA-256 values used only as in-memory cache indexes for bearer tokens. They are not persisted password verifiers, nor used to authenticate callers. Adding password-stretching work to each cache lookup would not improve this boundary.

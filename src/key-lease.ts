@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto"
-import { isOpenSecMemberToken, routerBaseUrl } from "./opensec-config.ts"
+import { configuredRouterToken, isOpenSecMemberToken, routerBaseUrl } from "./opensec-config.ts"
 import { UsageQueue } from "./usage-queue.ts"
 import type { ModelLike, StreamOptions } from "./types.ts"
 
@@ -60,7 +60,7 @@ function replaceAuthorization(
 export class CommandCodeKeyLeaseManager {
   private readonly explicitRouter = Boolean(process.env.OPENSEC_ROUTER_URL?.trim())
   private readonly baseUrl = routerBaseUrl(process.env.OPENSEC_ROUTER_URL?.trim() || undefined)
-  private readonly configuredToken = process.env.OPENSEC_ROUTER_TOKEN?.trim()
+  private readonly configuredToken = configuredRouterToken()
   private readonly leases = new Map<string, KeyLease>()
   private readonly queue = this.baseUrl
     ? new UsageQueue(joinUrl(this.baseUrl, "/api/router/usage"))
@@ -138,6 +138,9 @@ export class CommandCodeKeyLeaseManager {
 
   async flushUsage(): Promise<void> {
     await this.queue?.flush()
+  }
+  async shutdown(): Promise<void> {
+    await this.queue?.shutdown(1500)
   }
   get telemetryStats() {
     return this.queue?.stats

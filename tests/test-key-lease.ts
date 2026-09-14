@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { afterEach, describe, it } from "node:test"
 
-import { routerBaseUrl } from "../src/opensec-config.ts"
+import { configuredRouterToken, routerBaseUrl } from "../src/opensec-config.ts"
 import { CommandCodeKeyLeaseManager } from "../src/key-lease.ts"
 import type { AssistantMessageEvent } from "../src/types.ts"
 import { makeModel } from "./helpers.ts"
@@ -312,6 +312,14 @@ describe("cache-preserving lease failures", () => {
 })
 
 describe("OpenSec credential destination boundaries", () => {
+  it("rejects a legacy router token without a router URL before any provider request", () => {
+    delete process.env.OPENSEC_ROUTER_URL
+    process.env.OPENSEC_ROUTER_TOKEN = "legacy-secret"
+    assert.throws(() => configuredRouterToken(), /require OPENSEC_ROUTER_URL/)
+    assert.throws(() => new CommandCodeKeyLeaseManager(), /require OPENSEC_ROUTER_URL/)
+    process.env.OPENSEC_ROUTER_URL = "https://router.test"
+    assert.equal(configuredRouterToken(), "legacy-secret")
+  })
   it("allows HTTPS and literal loopback only, without URL credentials or hidden components", () => {
     assert.equal(routerBaseUrl(), "https://cc.opensec.in")
     assert.equal(routerBaseUrl("https://router.test/cc/"), "https://router.test/cc")
