@@ -107,6 +107,8 @@ export interface ProviderResponseInfo {
 }
 
 export interface StreamOptions {
+  /** Internal per-request telemetry observer; never sent to upstream APIs. */
+  onUsageEvent?: (event: AssistantMessageEvent) => void
   apiKey?: string
   signal?: AbortSignal
   headers?: Record<string, string>

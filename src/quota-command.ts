@@ -1,3 +1,4 @@
+import { isOpenSecMemberToken, DEFAULT_OPENSEC_ROUTER_URL } from "./opensec-config.ts"
 import { getConfiguredApiKey } from "./api-key.ts"
 import { pickCommandCodeApiKey } from "./converters.ts"
 import { fetchCommandCodeQuota, redactValue } from "./quota.ts"
@@ -47,6 +48,14 @@ export function registerCommandCodeQuota(
         ctx.ui.notify(
           "Command Code quota requires an API key. Run /login and select Command Code, or set COMMAND_CODE_API_KEY.",
           "warning",
+        )
+        return
+      }
+
+      if (isOpenSecMemberToken(apiKey)) {
+        ctx.ui.notify(
+          `View your OpenSec usage at ${process.env.OPENSEC_ROUTER_URL?.trim() || DEFAULT_OPENSEC_ROUTER_URL}`,
+          "info",
         )
         return
       }

@@ -70,7 +70,10 @@ function findAccount(accounts: StoredAccount[], id: string): StoredAccount {
 }
 
 function constantTimeEqual(left: string, right: string): boolean {
-  return timingSafeEqual(createHash("sha256").update(left).digest(), createHash("sha256").update(right).digest())
+  return timingSafeEqual(
+    createHash("sha256").update(left).digest(),
+    createHash("sha256").update(right).digest(),
+  )
 }
 
 function authorizeKeyExport(request: express.Request): "enabled" | "disabled" | "denied" {
@@ -239,7 +242,8 @@ app.post("/api/accounts/:id/refresh", async (request, response, next) => {
 app.post("/api/accounts/:id/key", async (request, response, next) => {
   try {
     const authorization = authorizeKeyExport(request)
-    if (authorization === "disabled") throw new AppError("API key copying is disabled on this server", 403)
+    if (authorization === "disabled")
+      throw new AppError("API key copying is disabled on this server", 403)
     if (authorization === "denied") throw new AppError("Invalid key export token", 401)
     const id = z.string().uuid().parse(request.params.id)
     const account = findAccount((await store.read()).accounts, id)

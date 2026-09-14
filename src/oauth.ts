@@ -13,6 +13,7 @@
  * OAuth credentials with a far-future expiry.
  */
 
+import { isOpenSecMemberToken } from "./opensec-config.ts"
 import { randomBytes } from "node:crypto"
 import { startAuthServer } from "./auth-server.ts"
 
@@ -100,6 +101,13 @@ export async function validateApiKey(
   apiKey: string,
   options: { fetchImpl?: typeof fetch; apiBase?: string } = {},
 ): Promise<void> {
+  // Store member tokens locally; the first lease authenticates them with OpenSec.
+  // Never send an OpenSec credential to CommandCode's whoami endpoint.
+  if (isOpenSecMemberToken(apiKey)) {
+    if (!/^os_member_[A-Za-z0-9_-]{43}$/.test(apiKey))
+      throw new Error("Invalid OpenSec member token format")
+    return
+  }
   let response: Response
   try {
     response = await (options.fetchImpl ?? fetch)(
@@ -133,7 +141,7 @@ async function chooseLoginFlow(callbacks: OAuthLoginCallbacks): Promise<LoginCho
   const input = sanitizeApiKey(
     await callbacks.onPrompt({
       message:
-        "Command Code login: press Enter for browser login, type 'key' to paste an API key, or paste the API key directly:",
+        "Command Code login: press Enter for browser login, type 'key' to paste an API key, or paste an OpenSec member token directly:",
     }),
   )
   const normalized = input.toLowerCase()

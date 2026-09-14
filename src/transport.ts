@@ -23,6 +23,7 @@ interface TransportDependencies {
     options?: StreamOptions,
   ) => AssistantMessageEventStreamLike
   observeEvent?: (event: AssistantMessageEvent, model: ModelLike, apiKey?: string) => void
+  resolveOptions?: (model: ModelLike, options?: StreamOptions) => Promise<StreamOptions | undefined>
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -60,11 +61,13 @@ export function createCommandCodeTransportRouter(deps: TransportDependencies) {
     target: AssistantMessageEventStreamLike,
     model: ModelLike,
     apiKey?: string,
+    onUsageEvent?: StreamOptions["onUsageEvent"],
   ): Promise<void> {
     return (async () => {
       for await (const event of source) {
         target.push(event)
-        deps.observeEvent?.(event, model, apiKey)
+        if (!onUsageEvent) deps.observeEvent?.(event, model, apiKey)
+        onUsageEvent?.(event)
       }
     })()
   }
@@ -90,26 +93,33 @@ export function createCommandCodeTransportRouter(deps: TransportDependencies) {
       }
       const requestApiKey = options?.apiKey
       const output = deps.createStream()
-      let upgradeRequired = false
-      const fetchImpl = options?.fetch ?? fetch
-      const providerOptions: StreamOptions = {
-        ...options,
-        fetch: async (input, init) => {
-          const response = await fetchImpl(input, init)
-          if (deps.allowLegacyGenerate && (await isUpgradeRequired(response))) {
-            upgradeRequired = true
-          }
-          return response
-        },
-        onResponse: async (response, responseModel) => {
-          if (upgradeRequired) return
-          await options?.onResponse?.(response, responseModel)
-        },
-      }
 
       const run = async () => {
+        const resolvedOptions = (await deps.resolveOptions?.(model, options)) ?? options
+        const resolvedApiKey = resolvedOptions?.apiKey
+        let upgradeRequired = false
+        const fetchImpl = resolvedOptions?.fetch ?? fetch
+        const providerOptions: StreamOptions = {
+          ...resolvedOptions,
+          fetch: async (input, init) => {
+            const response = await fetchImpl(input, init)
+            if (deps.allowLegacyGenerate && (await isUpgradeRequired(response)))
+              upgradeRequired = true
+            return response
+          },
+          onResponse: async (response, responseModel) => {
+            if (upgradeRequired) return
+            await resolvedOptions?.onResponse?.(response, responseModel)
+          },
+        }
         if (transport === "generate") {
-          await pipe(deps.streamGenerate(model, context, options), output, model, requestApiKey)
+          await pipe(
+            deps.streamGenerate(model, context, resolvedOptions),
+            output,
+            model,
+            resolvedApiKey,
+            resolvedOptions?.onUsageEvent,
+          )
           output.end()
           return
         }
@@ -119,13 +129,21 @@ export function createCommandCodeTransportRouter(deps: TransportDependencies) {
           if (!upgradeRequired) {
             if (apiKey === requestApiKey) transport = "provider"
             output.push(event)
-            deps.observeEvent?.(event, model, requestApiKey)
+            if (!resolvedOptions?.onUsageEvent)
+              deps.observeEvent?.(event, model, resolvedOptions?.apiKey)
+            resolvedOptions?.onUsageEvent?.(event)
           }
         }
 
         if (upgradeRequired) {
           if (apiKey === requestApiKey) transport = "generate"
-          await pipe(deps.streamGenerate(model, context, options), output, model, requestApiKey)
+          await pipe(
+            deps.streamGenerate(model, context, resolvedOptions),
+            output,
+            model,
+            resolvedOptions?.apiKey,
+            resolvedOptions?.onUsageEvent,
+          )
         }
         output.end()
       }

@@ -1032,5 +1032,6 @@ try {
   console.log("[pi-local] PASS")
 } finally {
   await new Promise((resolve) => server.close(resolve))
-  rmSync(tempHome, { recursive: true, force: true })
+  // RPC children can finish their final filesystem writes just after SIGTERM.
+  rmSync(tempHome, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
 }

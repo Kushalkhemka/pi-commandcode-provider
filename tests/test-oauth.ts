@@ -206,6 +206,35 @@ describe("startAuthServer()", () => {
 })
 
 describe("OAuth functions", () => {
+  it("stores OpenSec member credentials without sending them to CommandCode", async () => {
+    const token = "os_member_" + "a".repeat(43)
+    await validateApiKey(token, {
+      fetchImpl: async () => {
+        throw new Error("must not contact provider")
+      },
+    })
+    await assert.rejects(validateApiKey("os_member_bad"), /Invalid OpenSec member token format/)
+    const originalFetch = globalThis.fetch
+    let contacted = false
+    globalThis.fetch = async () => {
+      contacted = true
+      throw new Error("must not contact provider")
+    }
+    try {
+      const credentials = await login({
+        onPrompt: async () => token,
+        onAuth: () => {
+          throw new Error("must not open provider login")
+        },
+      })
+      assert.equal(credentials.access, token)
+      assert.equal(credentials.refresh, token)
+      assert.equal(contacted, false)
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
   it("getApiKey returns the access token", () => {
     const creds = {
       refresh: "refresh-key",
