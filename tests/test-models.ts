@@ -464,3 +464,23 @@ describe("loadCommandCodeModels()", () => {
     })
   })
 })
+
+describe("DeepSeek V4.1 Flash metadata", () => {
+  const id = "deepseek/deepseek-v4.1-flash"
+  it("exposes upstream low/high/max effort and image support for live and cached models", () => {
+    const live = commandCodeModelsFromApiResponse({
+      object: "list",
+      data: [{ id, name: "DeepSeek V4.1 Flash", context_length: 1_000_000 }],
+    })
+    assert.equal(live[0].reasoning, true)
+    const cached = commandCodeModelsFromCache({
+      version: 1,
+      models: [{ ...live[0], reasoning: false }],
+    })
+    assert.equal(cached[0].reasoning, true)
+    assert.deepEqual(inputModalitiesForModel(id), ["text", "image"])
+    assert.deepEqual(thinkingMetadataForModel(id)?.thinking?.efforts, ["low", "high", "max"])
+    assert.equal(thinkingMetadataForModel(id)?.thinkingLevelMap.low, "low")
+    assert.equal(thinkingMetadataForModel(id)?.thinkingLevelMap.medium, null)
+  })
+})

@@ -84,6 +84,13 @@ export const MODEL_COSTS: Readonly<Record<string, CommandCodeModelCost>> = {
     cacheRead: 0.007,
     cacheWrite: 0,
   },
+  // V4.1 off-peak display estimate, verified against Command Code pricing 2026-09-15.
+  "deepseek/deepseek-v4.1-flash": {
+    input: 0.15,
+    output: 0.6,
+    cacheRead: 0.003,
+    cacheWrite: 0,
+  },
   "deepseek/deepseek-v4-flash-fast": {
     input: 0.28,
     output: 0.56,

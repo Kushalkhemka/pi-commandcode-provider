@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Refresh model metadata from Command Code 1.54.0, including DeepSeek V4.1 Flash reasoning, low/high/max effort, and image support.
+- Add the documented V4.1 Flash off-peak cost estimate so its telemetry no longer reports zero solely because rates were missing.
+
 - Add CommandCode Quota Board, a local-first multi-account dashboard for rolling quotas, account identity, aggregate usage, model mix, and cache efficiency, with encrypted key storage and automatic opt-in telemetry from Pi.
 
 ## 1.0.0 - 2026-09-04
