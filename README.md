@@ -4,7 +4,7 @@
 
 **Use CommandCode models in Pi through the documented Provider API—with native streaming, tools, reasoning, vision, prompt caching, usage accounting, and resilient model discovery.**
 
-[![npm version](https://img.shields.io/npm/v/%40kushalkhemka%2Fpi-commandcode-provider?color=cb3837&logo=npm)](https://www.npmjs.com/package/@kushalkhemka/pi-commandcode-provider)
+[![npm version](https://img.shields.io/npm/v/opensec-pi-commandcode?color=cb3837&logo=npm)](https://www.npmjs.com/package/opensec-pi-commandcode)
 [![CI](https://github.com/Kushalkhemka/pi-commandcode-provider/actions/workflows/ci.yml/badge.svg)](https://github.com/Kushalkhemka/pi-commandcode-provider/actions/workflows/ci.yml)
 [![CommandCode catalog](https://github.com/Kushalkhemka/pi-commandcode-provider/actions/workflows/model-metadata.yml/badge.svg)](https://github.com/Kushalkhemka/pi-commandcode-provider/actions/workflows/model-metadata.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -12,6 +12,9 @@
 [Install](#install) · [Compatibility](#compatibility) · [Configuration](#configuration) · [Troubleshooting](#troubleshooting) · [Contributing](CONTRIBUTING.md)
 
 </div>
+
+> [!IMPORTANT]
+> Development has moved to [OpenSec’s canonical repository](https://github.com/opensec-git/pi-commandcode-provider). Use the unscoped `opensec-pi-commandcode` package for current routing fixes and model support. This repository and `@kushalkhemka/pi-commandcode-provider` contain the older release; the technical details below describe that older version.
 
 > [!IMPORTANT]
 > This is an unofficial, community-maintained integration. It is not affiliated with or endorsed by CommandCode. You need your own account and a plan with [Provider API access](https://commandcode.ai/docs/provider).
@@ -30,7 +33,7 @@
 ## Install
 
 ```bash
-pi install npm:@kushalkhemka/pi-commandcode-provider
+pi install npm:opensec-pi-commandcode
 ```
 
 Restart Pi or run `/reload`, then authenticate:
