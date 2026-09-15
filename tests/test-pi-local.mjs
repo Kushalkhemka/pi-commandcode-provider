@@ -98,6 +98,12 @@ function modelCatalog() {
       context_length: 1_000_000,
     },
   ]
+  data.push({
+    id: "deepseek/deepseek-v4.1-flash",
+    object: "model",
+    name: "DeepSeek V4.1 Flash",
+    context_length: 1_000_000,
+  })
   if (includeRefreshedModel) {
     data.push({
       id: "cc-refreshed-model",
@@ -478,7 +484,7 @@ async function runRpcExtensionCommands(timeoutMs = 30_000) {
           event.type === "extension_ui_request" &&
           event.method === "notify" &&
           typeof event.message === "string" &&
-          event.message.includes("model count: 3"),
+          event.message.includes("model count: 4"),
         fromIndex,
       )
       if (/source: live[\s\S]*refresh: idle/.test(statusBefore.message)) break
@@ -493,7 +499,7 @@ async function runRpcExtensionCommands(timeoutMs = 30_000) {
         event.type === "extension_ui_request" &&
         event.method === "notify" &&
         typeof event.message === "string" &&
-        event.message.includes("4 models from live"),
+        event.message.includes("5 models from live"),
     )
 
     send({ id: "status-after", type: "prompt", message: "/commandcode-status" })
@@ -505,7 +511,7 @@ async function runRpcExtensionCommands(timeoutMs = 30_000) {
         event.type === "extension_ui_request" &&
         event.method === "notify" &&
         typeof event.message === "string" &&
-        event.message.includes("model count: 4"),
+        event.message.includes("model count: 5"),
     )
 
     return {
@@ -877,6 +883,26 @@ try {
   const noEnvKey = { COMMAND_CODE_API_KEY: undefined, COMMANDCODE_API_KEY: undefined }
   const authPath = join(agentDir, "auth.json")
 
+  console.log("[pi-local] V4.1 Flash selectable efforts reach the provider payload")
+  for (const effort of ["low", "high", "max"]) {
+    const result = await runPi([
+      "--no-extensions",
+      "-e",
+      EXT_PATH,
+      "-p",
+      "say mock token",
+      "--provider",
+      "commandcode",
+      "--model",
+      "deepseek/deepseek-v4.1-flash",
+      "--thinking",
+      effort,
+    ])
+    assert.equal(result.code, 0, result.stderr)
+    assert.equal(lastRequestBody?.model, "deepseek/deepseek-v4.1-flash")
+    assert.equal(lastRequestBody?.reasoning_effort, effort)
+  }
+
   console.log("[pi-local] stored /login OAuth credential is used when no env key exists")
   writeFileSync(
     authPath,
@@ -961,8 +987,8 @@ try {
   assert.ok(runtimeCommands.commandNames.includes("commandcode-refresh"))
   assert.ok(runtimeCommands.commandNames.includes("commandcode-status"))
   assert.match(runtimeCommands.statusBefore, /source: live/)
-  assert.match(runtimeCommands.refreshNotification, /4 models from live/)
-  assert.match(runtimeCommands.statusAfter, /model count: 4/)
+  assert.match(runtimeCommands.refreshNotification, /5 models from live/)
+  assert.match(runtimeCommands.statusAfter, /model count: 5/)
   assert.doesNotMatch(
     `${runtimeCommands.statusBefore}\n${runtimeCommands.statusAfter}\n${runtimeCommands.stderr}`,
     /mock-key/,
